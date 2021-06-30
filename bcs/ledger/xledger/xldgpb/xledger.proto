@@ -131,6 +131,10 @@ message Transaction {
     ModifyBlock modify_block = 32;
     // HD加解密相关信息
     HDInfo HD_info = 33;
+    //投票奖励
+    bool vote_coinbase = 34;
+    //解冻，凭空产生的消耗
+    bool thaw_coinbase = 35;
 }
 
 // Ledger metadata

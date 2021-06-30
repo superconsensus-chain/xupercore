@@ -87,6 +87,25 @@ func GenerateAwardTx(address, awardAmount string, desc []byte) (*pb.Transaction,
 	return utxoTx, nil
 }
 
+//生成投票奖励的交易
+func GenerateVoteAwardTx(address []byte, awardAmount string, desc []byte) (*pb.Transaction, error) {
+	utxoTx := &pb.Transaction{Version: TxVersion}
+	amount := big.NewInt(0)
+	amount.SetString(awardAmount, 10) // 10进制转换大整数
+	if amount.Cmp(big.NewInt(0)) < 0 {
+		return nil, ErrNegativeAmount
+	}
+	txOutput := &protos.TxOutput{}
+	txOutput.ToAddr = []byte(address)
+	txOutput.Amount = amount.Bytes()
+	utxoTx.TxOutputs = append(utxoTx.TxOutputs, txOutput)
+	utxoTx.Desc = desc
+	utxoTx.VoteCoinbase = true //是否为投票所得
+	utxoTx.Timestamp = time.Now().UnixNano()
+	utxoTx.Txid, _ = txhash.MakeTransactionID(utxoTx)
+	return utxoTx, nil
+}
+
 // 生成只有Desc的空交易
 func GenerateEmptyTx(desc []byte) (*pb.Transaction, error) {
 	utxoTx := &pb.Transaction{Version: TxVersion}

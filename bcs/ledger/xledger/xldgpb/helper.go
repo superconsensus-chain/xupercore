@@ -65,7 +65,7 @@ func (tx *Transaction) GetFee() *big.Int {
 func (ib *InternalBlock) GetCoinbaseTotal() *big.Int {
 	total := big.NewInt(0)
 	for _, tx := range ib.Transactions {
-		if tx.Coinbase {
+		if tx.Coinbase || tx.VoteCoinbase{
 			total = total.Add(total, tx.GetFrozenAmount(-1))
 		}
 	}

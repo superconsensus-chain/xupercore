@@ -34,6 +34,35 @@ type GovernTokenBalance struct {
 	LockedBalance map[string]*big.Int `json:"locked_balances"`
 }
 
+//投票提名记录表(普通用户这是这张表，只是部分数据没有而已)
+type CandidateRatio struct {
+	//总票数
+	TotalVote *big.Int            	`json:"total_vote"`
+	//分红比率
+	Ratio int64					  	`json:"ratio"`
+	//投票的人
+	VotingUser map[string]*big.Int 	`json:"voting_user"`
+	//是否是提名人(取消此提名人后数据不能删除，通过标志位修改)
+	IsNominate bool					`json:"is_nominate"`
+	//我投票的人
+	MyVoting map[string]*big.Int	`json:"my_voting"`
+}
+
+//缓存表，产块分红读取这个
+type CacheVoteCandidate struct {
+	//分红比率
+	Ratio int64					  	`json:"ratio"`
+	//投票的人
+	VotingUser map[string]*big.Int 	`json:"voting_user"`
+	//总票数
+	TotalVote *big.Int            	`json:"total_vote"`
+}
+
+//纪录所有提名人，每轮开始的时候用于更新缓存表
+type AllCandidate struct {
+	Candidate map[string]string 	`json:"candidate"`
+}
+
 // Proposal
 type Proposal struct {
 	Args    map[string]interface{} `json:"args"`
@@ -63,6 +92,14 @@ func NewGovernTokenBalance() *GovernTokenBalance {
 	balance.LockedBalance[GovernTokenTypeTDPOS] = big.NewInt(0)
 
 	return balance
+}
+
+func NewCandidateRatio() *CandidateRatio{
+	CandidateRatio := &CandidateRatio{
+		TotalVote:  	big.NewInt(0),
+		Ratio:			0,
+	}
+	return CandidateRatio
 }
 
 // Parse

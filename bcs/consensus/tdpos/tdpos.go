@@ -160,6 +160,7 @@ Again:
 	// 查当前时间的term 和 pos
 	term, pos, blockPos := tp.election.minerScheduling(time.Now().UnixNano())
 	if blockPos < 0 || blockPos >= tp.election.blockNum || pos >= tp.election.proposerNum {
+		//走到这个里面，就是新的一轮了
 		tp.log.Debug("Tdpos::CompeteMaster::minerScheduling err", "term", term, "pos", pos, "blockPos", blockPos)
 		goto Again
 	}

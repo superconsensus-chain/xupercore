@@ -40,4 +40,43 @@ message Proposal {
     string proposer = 7;
 }
 
+message ProposalRatio{
+    map<string,int64> user_ratio = 1;
+}
+
+//冻结资产记录表
+message FrozenAssetsTable {
+    string total = 1;
+    //repeated FrozenDetails  frozendetail = 2;
+    map<string , FrozenDetails> frozen_detail = 2;
+    //repeated FrozenDetails  thawdetail = 3;
+    map<string, FrozenDetails> thaw_detail = 3;
+    int64 timestamp = 4;
+}
+message FrozenDetails {
+    // string txid = 1;
+    int64 height = 1;
+    string amount = 2;
+    int64 timestamp = 3;
+    //是否已经解冻
+    // bool isthaw = 3;
+}
+
+message NodeDetails {
+    repeated NodeDetail node_detail =1;
+}
+
+message NodeDetail{
+    string txid = 1;
+    int64 height = 2;
+    string amount = 3;
+    //string address = 4;
+}
+
+//节点待解冻的信息
+message NodeTable{
+    map<int64,NodeDetails> node_details =1;
+}
+
+
 

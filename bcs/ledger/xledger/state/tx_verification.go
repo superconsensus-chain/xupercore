@@ -896,7 +896,7 @@ func (t *State) verifyDAGTxs(blockHeight int64, txs []*pb.Transaction, isRootTx 
 					return errors.New("dotx failed to ImmediateVerifyAutoTx error")
 				}
 			}
-			if !tx.Autogen && !tx.Coinbase {
+			if !tx.Autogen && !tx.Coinbase &&!tx.ThawCoinbase && tx.VoteCoinbase{
 				// 校验用户交易
 				if ok, err := t.ImmediateVerifyTx(tx, isRootTx); !ok {
 					t.log.Warn("dotx failed to ImmediateVerifyTx", "txid", fmt.Sprintf("%x", tx.Txid), "err", err)

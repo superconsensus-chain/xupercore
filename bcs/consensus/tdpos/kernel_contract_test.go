@@ -214,3 +214,9 @@ func TestRunRevokeVote(t *testing.T) {
 		return
 	}
 }
+
+func TestRun(t *testing.T){
+	test := new(tdposConsensus)
+	fakeCtx := mock.NewFakeKContext(NewNominateArgs(), NewM())
+	test.runNominateCandidate(fakeCtx)
+}

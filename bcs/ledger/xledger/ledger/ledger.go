@@ -72,7 +72,7 @@ type Ledger struct {
 	ctx            *LedgerCtx
 	baseDB         kvdb.Database // 底层是一个leveldb实例，kvdb进行了包装
 	metaTable      kvdb.Database // 记录区块链的根节点、高度、末端节点
-	confirmedTable kvdb.Database // 已确认的订单表
+	ConfirmedTable kvdb.Database // 已确认的订单表
 	blocksTable    kvdb.Database // 区块表
 	mutex          *sync.RWMutex
 	xlog           logs.Logger     //日志库
@@ -129,7 +129,7 @@ func newLedger(lctx *LedgerCtx, createIfMissing bool, genesisCfg []byte) (*Ledge
 
 	ledger.baseDB = baseDB
 	ledger.metaTable = kvdb.NewTable(baseDB, pb.MetaTablePrefix)
-	ledger.confirmedTable = kvdb.NewTable(baseDB, pb.ConfirmedTablePrefix)
+	ledger.ConfirmedTable = kvdb.NewTable(baseDB, pb.ConfirmedTablePrefix)
 	ledger.blocksTable = kvdb.NewTable(baseDB, pb.BlocksTablePrefix)
 	ledger.pendingTable = kvdb.NewTable(baseDB, pb.PendingBlocksTablePrefix)
 	ledger.heightTable = kvdb.NewTable(baseDB, pb.BlockHeightPrefix)
@@ -448,6 +448,34 @@ func (l *Ledger) handleFork(oldTip []byte, newTipPre []byte, nextHash []byte, ba
 	return splitBlock, nil
 }
 
+
+////设置奖励分配
+func (l *Ledger)AssignRewards(address string,blockAward *big.Int) *big.Int {
+
+	award := big.NewInt(0)
+	//KernMethod := new(governToken.KernMethod)
+	//fakeCtx := mock.NewFakeKContext(NewNominateArgs(), NewM())
+	//ratData  := KernMethod.GetRewardRatio(fakeCtx,address)
+	//if ratData == 0 {
+	//	return award
+	//}
+	keytalbe := "cached_dividend_table"
+	//查看缓存表是否有
+	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(keytalbe))
+	if kvErr != nil {
+		return award
+	}
+	table := &protos.ProposalRatio{}
+	parserErr := proto.Unmarshal(PbTxBuf, table)
+	if parserErr != nil {
+		fmt.Printf("D_异常错误，读缓存表分红失败\n")
+		return award
+	}
+
+	award.Mul(blockAward,big.NewInt(table.UserRatio[address])).Div(award,big.NewInt(100))
+	return award
+}
+
 // IsValidTx valid transactions of coinbase in block
 func (l *Ledger) IsValidTx(idx int, tx *pb.Transaction, block *pb.InternalBlock) bool {
 	if tx.Coinbase { //检查系统奖励交易的合法性
@@ -457,10 +485,18 @@ func (l *Ledger) IsValidTx(idx int, tx *pb.Transaction, block *pb.InternalBlock)
 		}
 		//交易奖励的金额是否符合策略?
 		awardTarget := l.GenesisBlock.CalcAward(block.Height)
+		//获取奖励比
+		remainAward := l.AssignRewards(string(block.Proposer),awardTarget)
+		blockAward := big.NewInt(0)
+		blockAward.Sub(awardTarget,remainAward)
+		fmt.Printf("DT__当前奖励比: %s \n", blockAward.String())
+		fmt.Printf("DT__当前高度： %d , 出块人 : %s \n",block.Height,string(block.Proposer))
+
 		amountBytes := tx.TxOutputs[0].Amount
 		awardN := big.NewInt(0)
 		awardN.SetBytes(amountBytes)
-		if awardN.Cmp(awardTarget) != 0 {
+		fmt.Printf("DT__awardN奖励: %s \n",awardN.String())
+		if awardN.Cmp(blockAward) != 0 {
 			l.xlog.Warn("invalid block award found", "award", awardN.String(), "target", awardTarget.String())
 			return false
 		}
@@ -501,7 +537,7 @@ func (l *Ledger) UpdateBlockChainData(txid string, ptxid string, publickey strin
 		l.xlog.Warn("marshal trasaction failed when UpdateBlockChainData", "err", err)
 		return err
 	}
-	l.confirmedTable.Put(tx.Txid, pbTxBuf)
+	l.ConfirmedTable.Put(tx.Txid, pbTxBuf)
 
 	l.xlog.Info("Update BlockChainData success", "txid", hex.EncodeToString(tx.Txid))
 	return nil
@@ -535,7 +571,7 @@ func (l *Ledger) parallelCheckTx(txs []*pb.Transaction, block *pb.InternalBlock)
 					mu.Unlock()
 				}
 				if !DisableTxDedup || !block.InTrunk {
-					hasTx, _ := l.confirmedTable.Has(tx.Txid)
+					hasTx, _ := l.ConfirmedTable.Has(tx.Txid)
 					mu.Lock()
 					txExist[string(tx.Txid)] = hasTx
 					mu.Unlock()
@@ -675,7 +711,7 @@ func (l *Ledger) ConfirmBlock(block *pb.InternalBlock, isRoot bool) ConfirmStatu
 			batchWrite.Put(append([]byte(pb.ConfirmedTablePrefix), tx.Txid...), pbTxBuf)
 		} else {
 			//confirm表已经存在这个交易了，需要检查一下是否存在多个主干block包含同样trasnaction的情况
-			oldPbTxBuf, _ := l.confirmedTable.Get(tx.Txid)
+			oldPbTxBuf, _ := l.ConfirmedTable.Get(tx.Txid)
 			oldTx := &pb.Transaction{}
 			parserErr := proto.Unmarshal(oldPbTxBuf, oldTx)
 			if parserErr != nil {
@@ -777,7 +813,7 @@ func (l *Ledger) queryBlock(blockid []byte, needBody bool) (*pb.InternalBlock, e
 	if needBody {
 		realTransactions := make([]*pb.Transaction, 0)
 		for _, txid := range block.MerkleTree[:block.TxCount] {
-			pbTxBuf, kvErr := l.confirmedTable.Get(txid)
+			pbTxBuf, kvErr := l.ConfirmedTable.Get(txid)
 			if kvErr != nil {
 				l.xlog.Warn("tx not found", "kvErr", kvErr, "txid", utils.F(txid))
 				return block, kvErr
@@ -817,13 +853,13 @@ func (l *Ledger) QueryBlockHeader(blockid []byte) (*pb.InternalBlock, error) {
 
 // HasTransaction check if a transaction exists in the ledger
 func (l *Ledger) HasTransaction(txid []byte) (bool, error) {
-	table := l.confirmedTable
+	table := l.ConfirmedTable
 	return table.Has(txid)
 }
 
 // QueryTransaction query a transaction in the ledger and return it if exist
 func (l *Ledger) QueryTransaction(txid []byte) (*pb.Transaction, error) {
-	table := l.confirmedTable
+	table := l.ConfirmedTable
 	pbTxBuf, kvErr := table.Get(txid)
 	if kvErr != nil {
 		if def.NormalizedKVError(kvErr) == def.ErrKVNotFound {
@@ -843,7 +879,7 @@ func (l *Ledger) QueryTransaction(txid []byte) (*pb.Transaction, error) {
 func (l *Ledger) IsTxInTrunk(txid []byte) bool {
 	var blk *pb.InternalBlock
 	var err error
-	table := l.confirmedTable
+	table := l.ConfirmedTable
 	pbTxBuf, kvErr := table.Get(txid)
 	if kvErr != nil {
 		return false

@@ -135,13 +135,20 @@ func (t *Miner) Start() {
 			isMiner, isSync, err = t.ctx.Consensus.CompeteMaster(ledgerTipHeight + 1)
 			ctx.GetLog().Trace("compete master result", "height", ledgerTipHeight+1, "isMiner", isMiner, "isSync", isSync, "err", err)
 		}
+		//当 isMiner=true isSync=true时，为新的一个周期
+		flag := false
+		if isMiner == true && isSync == true{
+			fmt.Printf("D__开始新的一个周期")
+			flag = true
+		}
+
 		// 3.如需要同步，尝试同步网络最新区块
 		if err == nil && isMiner && isSync {
 			err = t.trySyncBlock(ctx, nil)
 		}
 		// 4.如果是矿工，出块
 		if err == nil && isMiner {
-			err = t.mining(ctx)
+			err = t.mining(ctx,flag)
 		}
 		// 5.如果出错，休眠3s后重试，防止cpu被打满
 		if err != nil && !t.IsExit() {
@@ -172,7 +179,7 @@ func (t *Miner) IsExit() bool {
 }
 
 // 挖矿生产区块
-func (t *Miner) mining(ctx xctx.XContext) error {
+func (t *Miner) mining(ctx xctx.XContext,flag bool) error {
 	ctx.GetLog().Debug("mining start.")
 	// 1.获取矿工互斥锁，矿工行为完全串行
 	t.minerMutex.Lock()
@@ -210,7 +217,7 @@ func (t *Miner) mining(ctx xctx.XContext) error {
 	}
 
 	// 4.打包区块
-	block, err := t.packBlock(ctx, height, now, extData)
+	block, err := t.packBlock(ctx, height, now, extData,flag)
 	if err != nil {
 		ctx.GetLog().Warn("pack block error", "err", err)
 		return err
@@ -260,7 +267,7 @@ func (t *Miner) truncateForMiner(ctx xctx.XContext, target []byte) error {
 }
 
 func (t *Miner) packBlock(ctx xctx.XContext, height int64,
-	now time.Time, consData []byte) (*lpb.InternalBlock, error) {
+	now time.Time, consData []byte,flag bool) (*lpb.InternalBlock, error) {
 	// 区块大小限制
 	sizeLimit, err := t.ctx.State.MaxTxSizePerBlock()
 	if err != nil {
@@ -286,8 +293,15 @@ func (t *Miner) packBlock(ctx xctx.XContext, height int64,
 	}
 	ctx.GetLog().Debug("pack block get general tx succ", "txCount", len(generalTxList))
 
+	// 2.1 查看节点待解冻信息，看其是否有冻结的
+	thawTx, err := t.GetThawTx(height)
+	if err != nil {
+		fmt.Printf("D__解冻出块时查询解冻信息失败\n")
+		return nil, err
+	}
+
 	// 3.获取矿工奖励交易
-	awardTx, err := t.getAwardTx(height)
+	awardTx,remainAward, err := t.getAwardTx(height,flag)
 	if err != nil {
 		return nil, err
 	}
@@ -300,6 +314,25 @@ func (t *Miner) packBlock(ctx xctx.XContext, height int64,
 	}
 	if len(generalTxList) > 0 {
 		txList = append(txList, generalTxList...)
+	}
+	if len(thawTx) > 0 {
+		txList = append(txList,thawTx...)
+	}
+
+	//投票奖励分配
+	if remainAward != nil && remainAward.Int64() > 0 && flag == true{
+		voteTxs, err :=t.GenerateVoteAward(t.ctx.Address.Address,remainAward)
+		if err != nil {
+			return nil, fmt.Errorf("D__[Vote_Award] fail to generate vote award",  "err", err)
+		}
+		txList = append(txList, voteTxs...)
+	}
+	//刷缓存数据
+	if flag == true{
+		error := t.updateCacheTable()
+		if error != nil {
+			return nil, error
+		}
 	}
 
 	// 4.打包区块
@@ -363,18 +396,79 @@ func (t *Miner) getUnconfirmedTx(sizeLimit int) ([]*lpb.Transaction, error) {
 	return txList, nil
 }
 
-func (t *Miner) getAwardTx(height int64) (*lpb.Transaction, error) {
+func (t *Miner) getAwardTx(height int64,flag bool) (*lpb.Transaction, *big.Int,error) {
 	amount := t.ctx.Ledger.GenesisBlock.CalcAward(height)
 	if amount.Cmp(big.NewInt(0)) < 0 {
-		return nil, errors.New("amount in transaction can not be negative number")
+		return nil, nil,errors.New("amount in transaction can not be negative number")
 	}
 
-	awardTx, err := tx.GenerateAwardTx(t.ctx.Address.Address, amount.String(), []byte("award"))
+	//获取奖励比
+	block_award := big.NewInt(0)
+	remainAward := big.NewInt(0)
+	if flag == false {
+		remainAward = t.AssignRewards(t.ctx.Address.Address, amount)
+	}
+	block_award.Sub(amount, remainAward)
+	awardTx, err := tx.GenerateAwardTx(t.ctx.Address.Address, block_award.String(), []byte("award"))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return awardTx, nil
+	return awardTx, remainAward,nil
+}
+
+//构建解冻交易
+func (t * Miner)GetThawTx(height int64)([]*lpb.Transaction, error) {
+	//先获取节点冻结信息
+	txs := []*lpb.Transaction{}
+	keytable := "nodeinfo_" + "tdos_thaw_total_assets"
+	PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(keytable))
+	NodeTable := &protos.NodeTable{}
+	if(kvErr != nil) {
+		fmt.Printf("D__节点中不含解冻信息\n")
+		return nil,nil
+	}
+	parserErr := proto.Unmarshal(PbTxBuf, NodeTable)
+	if parserErr != nil {
+		fmt.Printf("D__解析NodeTable错误，错误码： %s \n",parserErr)
+		return nil , parserErr
+	}
+	batch := t.ctx.State.NewBatch()
+	value , ok :=  NodeTable.NodeDetails[height]
+	if ok {
+		for _ , data := range value.NodeDetail{
+			txId := data.Txid
+			//查询这些交易，反转转账（全是在节点上操盘的，理论上不会失败，失败打印原因）
+			txdata,err := t.ctx.Ledger.QueryTransaction([]byte(txId))
+			if err != nil {
+				fmt.Printf("D__异常错误，退款交易查询错误，错误码: %s \n",err)
+				return nil, err
+			}
+			//反转转账,只是凭空构建，交易不记录总资产
+			tx,error := t.ctx.State.ReverseTx(txdata,batch,data.Amount)
+			if error != nil {
+				fmt.Printf("D__反转转账构造交易失败.,error: %s \n",error)
+				return nil, err
+			}
+			txs = append(txs, tx)
+		}
+	}
+	//删除当前高度的信息
+	delete(NodeTable.NodeDetails,height)
+	//写表
+	pbTxBuf, err := proto.Marshal(NodeTable)
+	if err != nil {
+		fmt.Printf("D__解冻时解析NodeTable失败\n")
+		return nil,err
+	}
+	batch.Put(append([]byte(lpb.ConfirmedTablePrefix), keytable...), pbTxBuf)
+	//原子写入
+	writeErr := batch.Write()
+	if writeErr != nil {
+		fmt.Printf("D__解冻交易时原子写入错误error %s , \n", writeErr)
+		return nil,writeErr
+	}
+	return txs, nil
 }
 
 func (t *Miner) confirmBlockForMiner(ctx xctx.XContext, block *lpb.InternalBlock) error {

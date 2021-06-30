@@ -449,6 +449,10 @@ type Transaction struct {
 	ModifyBlock *ModifyBlock `protobuf:"bytes,32,opt,name=modify_block,json=modifyBlock,proto3" json:"modify_block,omitempty"`
 	// HD加解密相关信息
 	HDInfo               *HDInfo  `protobuf:"bytes,33,opt,name=HD_info,json=HDInfo,proto3" json:"HD_info,omitempty"`
+	//投票奖励
+	VoteCoinbase bool  `protobuf:"varint,34,opt,name=vote_coinbase,proto3" json:"vote_coinbase,omitempty"`
+	//解冻，凭空产生的消耗
+	ThawCoinbase bool `protobuf:"varint,35,opt,name=thaw_coinbase,proto3" json:"thaw_coinbase,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -624,6 +628,20 @@ func (m *Transaction) GetHDInfo() *HDInfo {
 		return m.HDInfo
 	}
 	return nil
+}
+
+func (m *Transaction) GetVoteCoinbase() bool {
+	if m!=nil {
+		return m.VoteCoinbase
+	}
+	return false
+}
+
+func (m *Transaction) GetThawCoinbase() bool {
+	if m!=nil {
+		return m.ThawCoinbase
+	}
+	return false
 }
 
 // Ledger metadata

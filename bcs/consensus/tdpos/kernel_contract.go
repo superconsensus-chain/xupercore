@@ -34,6 +34,11 @@ func (tp *tdposConsensus) runNominateCandidate(contractCtx contract.KContext) (*
 	if err != nil {
 		return common.NewContractErrResponse(common.StatusErr, err.Error()), err
 	}
+	//1.1.1 核查分红比的参数有效性
+	ratio , err := tp.checkRatio(contractCtx.Args())
+	if err != nil {
+		return common.NewContractErrResponse(common.StatusErr, err.Error()), err
+	}
 	amountBytes := contractCtx.Args()["amount"]
 	amountStr := string(amountBytes)
 	amount, err := strconv.ParseInt(amountStr, 10, 64)
@@ -49,6 +54,8 @@ func (tp *tdposConsensus) runNominateCandidate(contractCtx contract.KContext) (*
 		"from":      []byte(contractCtx.Initiator()),
 		"amount":    []byte(fmt.Sprintf("%d", amount)),
 		"lock_type": []byte(utils.GovernTokenTypeTDPOS),
+		"ratio" : []byte(fmt.Sprintf("%d",ratio)),
+		"to": []byte(candidateName),
 	}
 	_, err = contractCtx.Call("xkernel", utils.GovernTokenKernelContract, "Lock", tokenArgs)
 	if err != nil {
@@ -360,6 +367,20 @@ func (tp *tdposConsensus) checkArgs(txArgs map[string][]byte) (string, int64, er
 		return "", 0, errors.New("Input height invalid. Pls wait seconds.")
 	}
 	return candidateName, height, nil
+}
+
+//检查分红比
+func (tp *tdposConsensus) checkRatio(txArgs map[string][]byte)(int64,error){
+	ratioArg := txArgs["ratio"]
+	ratioName := string(ratioArg)
+	ratio ,error := strconv.ParseInt(ratioName,10,64)
+	if error != nil {
+		return 0,error
+	}
+	if ratio<0 || ratio>100{
+		return 0, errors.New("D__分红比例必须在0-100之间")
+	}
+	return ratio , nil
 }
 
 type nominateValue map[string]map[string]int64

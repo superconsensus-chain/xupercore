@@ -19,11 +19,24 @@ const (
 	proposalBucket  = "proposal"
 	proposalIDKey   = "id"
 	proposalLockKey = "lock"
+
+	//加一个用户投票提名表
+	voteCandidateKey = "voteCandidate"
+	//加一个缓存表，记录投票分红，每一轮新的周期刷新数据
+	cacheKey = "voteCache"
 )
 
 // GetGovernTokenBucket return the govern token bucket name
 func GetGovernTokenBucket() string {
 	return governTokenBucket
+}
+
+func GetCacheKey() string {
+	return cacheKey
+}
+
+func GetvoteCandidateKey() string {
+	return voteCandidateKey
 }
 
 // MakeTotalSupplyKey generate totalsupply key
@@ -39,6 +52,14 @@ func GetDistributedKey() string {
 // MakeContractMethodKey generate contract and account mapping key
 func MakeAccountBalanceKey(account string) string {
 	return balanceKey + separator + account
+}
+
+func MakeCacheKey(account string) string {
+	return cacheKey + separator + account
+}
+
+func MakevoteCandidateKey(account string) string {
+	return voteCandidateKey + separator + account
 }
 
 // GetTimerBucket return the balance bucket name
