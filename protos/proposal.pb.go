@@ -476,7 +476,7 @@ func (m *NodeDetails) GetNodeDetail() []*NodeDetail {
 }
 
 type NodeDetail struct {
-	Txid                 string   `protobuf:"bytes,1,opt,name=txid,proto3" json:"txid,omitempty"`
+	Address                 string   `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	Height               int64    `protobuf:"varint,2,opt,name=height,proto3" json:"height,omitempty"`
 	Amount               string   `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -511,7 +511,7 @@ var xxx_messageInfo_NodeDetail proto.InternalMessageInfo
 
 func (m *NodeDetail) GetTxid() string {
 	if m != nil {
-		return m.Txid
+		return m.Address
 	}
 	return ""
 }

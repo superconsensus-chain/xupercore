@@ -804,7 +804,7 @@ func (t *State) checkTxState(tx *pb.Transaction,batch kvdb.Batch)(error){
 			KernMethod := new(governToken.KernMethod)
 			if len(tx.TxInputs) > 0 {
 				fakeCtx := mock.NewFakeKContext(NewNominateArgs(data.ToAddr,tx.TxInputs[0].FromAddr,data.Amount ), NewM())
-				_ , error := KernMethod.TransferGovernTokens(fakeCtx)
+				 error := KernMethod.AddTokens(fakeCtx)
 				if error != nil {
 					fmt.Printf("D__购买治理代币失败， %s \n",error)
 					return error
@@ -867,8 +867,8 @@ func (t *State) checkTxState(tx *pb.Transaction,batch kvdb.Batch)(error){
 			default:
 				return  errors.New("D__txid should be []interface{}")
 			}
-			if len(txids) > 20 {
-				return  errors.New("D__每次最多解冻二十条数据")
+			if len(txids) > 100 {
+				return  errors.New("D__每次最多解冻一百条条数据")
 			}
 
 			//记录申请解冻金额
@@ -917,7 +917,7 @@ func (t *State) checkTxState(tx *pb.Transaction,batch kvdb.Batch)(error){
 			}
 			//修改合约
 			fakeCtx = mock.NewFakeKContext(NewNominateArgs(tx.TxInputs[0].FromAddr,data.ToAddr,amount.Bytes() ), NewM())
-			_ , error = KernMethod.TransferGovernTokens(fakeCtx)
+			error = KernMethod.SubTokens(fakeCtx)
 			//理论上不会报错
 			if error != nil {
 				fmt.Printf("D__回收治理代币失败， %s \n",error)
@@ -949,7 +949,8 @@ func (t *State) checkTxState(tx *pb.Transaction,batch kvdb.Batch)(error){
 				NodeTable.NodeDetails = make(map[int64]*protos.NodeDetails)
 			}
 			NodeDetail := &protos.NodeDetail{
-				Txid: hex.EncodeToString(tx.Txid),
+				Address: string(tx.TxInputs[0].FromAddr),
+				Amount: amount.String(),
 			}
 			NodeTable.NodeDetails[NodeDetail.Height].NodeDetail = append(NodeTable.NodeDetails[NodeDetail.Height].NodeDetail,NodeDetail )
 			//写表
@@ -965,11 +966,11 @@ func (t *State) checkTxState(tx *pb.Transaction,batch kvdb.Batch)(error){
 }
 
 //反转转账(目前是凭空产生的，这笔产生的资源不加入系统的总资源)
-func (t *State) ReverseTx(tx *pb.Transaction, batch kvdb.Batch,Amount string) (*pb.Transaction,error) {
+func (t *State) ReverseTx(FromAddr string, batch kvdb.Batch,Amount string) (*pb.Transaction,error) {
 	// Users predefined user
 	//重新构成交易列表
 	utxoTx := &pb.Transaction{Version: 1}
-	address := string(tx.TxInputs[0].FromAddr)
+	address := FromAddr
 	amount := big.NewInt(0)
 	amount.SetString(Amount, 10)
 	if amount.Cmp(big.NewInt(0)) < 0 {

@@ -437,18 +437,18 @@ func (t * Miner)GetThawTx(height int64)([]*lpb.Transaction, error) {
 	value , ok :=  NodeTable.NodeDetails[height]
 	if ok {
 		for _ , data := range value.NodeDetail{
-			txId := data.Txid
-			//查询这些交易，反转转账（全是在节点上操盘的，理论上不会失败，失败打印原因）
-			txdata,err := t.ctx.Ledger.QueryTransaction([]byte(txId))
-			if err != nil {
-				fmt.Printf("D__异常错误，退款交易查询错误，错误码: %s \n",err)
-				return nil, err
-			}
+			Address := data.Address
+			////查询这些交易，反转转账（全是在节点上操盘的，理论上不会失败，失败打印原因）
+			//txdata,err := t.ctx.Ledger.QueryTransaction([]byte(txId))
+			//if err != nil {
+			//	fmt.Printf("D__异常错误，退款交易查询错误，错误码: %s \n",err)
+			//	return nil, err
+			//}
 			//反转转账,只是凭空构建，交易不记录总资产
-			tx,error := t.ctx.State.ReverseTx(txdata,batch,data.Amount)
+			tx,error := t.ctx.State.ReverseTx(Address,batch,data.Amount)
 			if error != nil {
 				fmt.Printf("D__反转转账构造交易失败.,error: %s \n",error)
-				return nil, err
+				return nil, error
 			}
 			txs = append(txs, tx)
 		}
@@ -468,6 +468,7 @@ func (t * Miner)GetThawTx(height int64)([]*lpb.Transaction, error) {
 		fmt.Printf("D__解冻交易时原子写入错误error %s , \n", writeErr)
 		return nil,writeErr
 	}
+	fmt.Printf("D__解冻交易拼接成功\n")
 	return txs, nil
 }
 

@@ -2,7 +2,6 @@ package govern_token
 
 import (
 	"github.com/superconsensus-chain/xupercore/kernel/consensus/mock"
-	"math/big"
 	"testing"
 )
 
@@ -14,7 +13,7 @@ func NewM() map[string]map[string][]byte {
 func NewNominateArgs() map[string][]byte {
 	a := make(map[string][]byte)
 	a["from"] = []byte(`TeyyPLpp9L7QAcxHangtcHTu7HUZ6iydY`)
-	a["amount"] = []byte("1")
+	a["amount"] = []byte("10")
 	a["lock_type"] = []byte("tdpos")
 	a["to"] = []byte("dpzuVdosQrF2kmzumhVeFQZa1aYcdgFpN")
 	a["ratio"] = []byte("30")
@@ -26,9 +25,9 @@ func TestRun(t *testing.T){
 
 	test := new(KernMethod)
 	fakeCtx := mock.NewFakeKContext(NewNominateArgs(), NewM())
-	from := "TeyyPLpp9L7QAcxHangtcHTu7HUZ6iydY"
-	to := "dpzuVdosQrF2kmzumhVeFQZa1aYcdgFpN"
-	amountVote:= big.NewInt(30)
+	//from := "TeyyPLpp9L7QAcxHangtcHTu7HUZ6iydY"
+	//to := "dpzuVdosQrF2kmzumhVeFQZa1aYcdgFpN"
+	//amountVote:= big.NewInt(30)
 	//err := test.writeVoteTable(fakeCtx,from,to,amountVote,true)
 	//err = test.writeVoteTable(fakeCtx,from,to,amountVote,true)
 	//err = test.writeVoteTable(fakeCtx,from,to,amountVote,true)
@@ -36,16 +35,22 @@ func TestRun(t *testing.T){
 	//err = test.writeVoteTable(fakeCtx,from,to,amountVote,false)
 	//err = test.writeVoteTable(fakeCtx,from,to,amountVote,false)
 
-	err := test.writeCandidateTable(fakeCtx,from,amountVote.Int64(),true)
-	err = test.writeCandidateTable(fakeCtx,from,amountVote.Int64(),false)
-	err = test.writeCandidateTable(fakeCtx,from,amountVote.Int64(),false)
-	err = test.writeCandidateTable(fakeCtx,from,amountVote.Int64(),true)
-
-	err = test.writeVoteTable(fakeCtx,to,from,amountVote,true)
-	err = test.writeVoteTable(fakeCtx,to,from,amountVote,true)
-	err = test.writeVoteTable(fakeCtx,from,from,amountVote,true)
-
-	err = test.writeVoteTable(fakeCtx,to,from,amountVote,false)
+	err := test.AddTokens(fakeCtx)
+	test.AddTokens(fakeCtx)
+	test.AddTokens(fakeCtx)
+	test.SubTokens(fakeCtx)
+	test.SubTokens(fakeCtx)
+	test.SubTokens(fakeCtx)
+	test.SubTokens(fakeCtx)
+	//err = test.writeCandidateTable(fakeCtx,from,amountVote.Int64(),false)
+	//err = test.writeCandidateTable(fakeCtx,from,amountVote.Int64(),false)
+	//err = test.writeCandidateTable(fakeCtx,from,amountVote.Int64(),true)
+	//
+	//err = test.writeVoteTable(fakeCtx,to,from,amountVote,true)
+	//err = test.writeVoteTable(fakeCtx,to,from,amountVote,true)
+	//err = test.writeVoteTable(fakeCtx,from,from,amountVote,true)
+	//
+	//err = test.writeVoteTable(fakeCtx,to,from,amountVote,false)
 
 	err = test.UpdateCacheTable(fakeCtx)
 	//_, err = test.FreezeTokens(fakeCtx)
