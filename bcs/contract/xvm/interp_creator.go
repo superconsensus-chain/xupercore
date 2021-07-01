@@ -3,7 +3,7 @@ package xvm
 import (
 	"io/ioutil"
 
-	"github.com/xuperchain/xupercore/kernel/contract/bridge"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/bridge"
 	"github.com/xuperchain/xvm/exec"
 	"github.com/xuperchain/xvm/runtime/emscripten"
 	gowasm "github.com/xuperchain/xvm/runtime/go"

@@ -1,8 +1,8 @@
 package rule
 
 import (
-	"github.com/xuperchain/xupercore/kernel/permission/acl/ptree"
-	pb "github.com/xuperchain/xupercore/protos"
+	"github.com/superconsensus-chain/xupercore/kernel/permission/acl/ptree"
+	pb "github.com/superconsensus-chain/xupercore/protos"
 
 	"testing"
 )

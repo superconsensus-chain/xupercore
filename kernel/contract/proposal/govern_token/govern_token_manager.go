@@ -3,8 +3,8 @@ package govern_token
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/xuperchain/xupercore/kernel/contract/proposal/utils"
-	pb "github.com/xuperchain/xupercore/protos"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/proposal/utils"
+	pb "github.com/superconsensus-chain/xupercore/protos"
 )
 
 // Manager manages all gov releated data, providing read/write interface

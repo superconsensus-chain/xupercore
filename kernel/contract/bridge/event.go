@@ -1,8 +1,8 @@
 package bridge
 
 import (
-	"github.com/xuperchain/xupercore/kernel/contract"
-	"github.com/xuperchain/xupercore/protos"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
+	"github.com/superconsensus-chain/xupercore/protos"
 )
 
 func eventsResourceUsed(events []*protos.ContractEvent) contract.Limits {

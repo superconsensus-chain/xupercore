@@ -8,7 +8,7 @@ import (
 
 	"github.com/hyperledger/burrow/execution/evm/abi"
 	"github.com/hyperledger/burrow/execution/exec"
-	"github.com/xuperchain/xupercore/kernel/contract/bridge"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/bridge"
 )
 
 func TestEvmCodeKey(t *testing.T) {

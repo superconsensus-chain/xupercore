@@ -3,13 +3,13 @@ package govern_token
 import (
 	"fmt"
 
-	xledger "github.com/xuperchain/xupercore/bcs/ledger/xledger/ledger"
-	"github.com/xuperchain/xupercore/kernel/common/xcontext"
-	"github.com/xuperchain/xupercore/kernel/contract"
-	"github.com/xuperchain/xupercore/kernel/contract/proposal/utils"
-	"github.com/xuperchain/xupercore/kernel/ledger"
-	"github.com/xuperchain/xupercore/lib/logs"
-	"github.com/xuperchain/xupercore/lib/timer"
+	xledger "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/ledger"
+	"github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/proposal/utils"
+	"github.com/superconsensus-chain/xupercore/kernel/ledger"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
+	"github.com/superconsensus-chain/xupercore/lib/timer"
 )
 
 type LedgerRely interface {

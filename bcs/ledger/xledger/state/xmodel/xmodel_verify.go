@@ -3,7 +3,7 @@ package xmodel
 import (
 	"fmt"
 
-	pb "github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb"
+	pb "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
 )
 
 func (s *XModel) verifyInputs(tx *pb.Transaction) error {

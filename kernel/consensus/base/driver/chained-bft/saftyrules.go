@@ -3,8 +3,8 @@ package chained_bft
 import (
 	"errors"
 
-	cCrypto "github.com/xuperchain/xupercore/kernel/consensus/base/driver/chained-bft/crypto"
-	"github.com/xuperchain/xupercore/lib/logs"
+	cCrypto "github.com/superconsensus-chain/xupercore/kernel/consensus/base/driver/chained-bft/crypto"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
 )
 
 var (

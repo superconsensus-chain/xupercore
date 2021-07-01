@@ -5,10 +5,10 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	pb "github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb"
-	kledger "github.com/xuperchain/xupercore/kernel/ledger"
-	"github.com/xuperchain/xupercore/lib/logs"
-	"github.com/xuperchain/xupercore/protos"
+	pb "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
+	kledger "github.com/superconsensus-chain/xupercore/kernel/ledger"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
+	"github.com/superconsensus-chain/xupercore/protos"
 )
 
 type xModSnapshot struct {

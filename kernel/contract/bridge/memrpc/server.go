@@ -7,7 +7,7 @@ import (
 	"reflect"
 
 	"github.com/golang/protobuf/proto"
-	pb "github.com/xuperchain/xupercore/kernel/contract/bridge/pb"
+	pb "github.com/superconsensus-chain/xupercore/kernel/contract/bridge/pb"
 )
 
 var (

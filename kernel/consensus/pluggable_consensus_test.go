@@ -7,15 +7,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xuperchain/xupercore/kernel/common/xcontext"
-	"github.com/xuperchain/xupercore/kernel/consensus/base"
-	"github.com/xuperchain/xupercore/kernel/consensus/context"
-	cctx "github.com/xuperchain/xupercore/kernel/consensus/context"
-	"github.com/xuperchain/xupercore/kernel/consensus/def"
-	"github.com/xuperchain/xupercore/kernel/consensus/mock"
-	"github.com/xuperchain/xupercore/kernel/contract"
-	"github.com/xuperchain/xupercore/lib/logs"
-	"github.com/xuperchain/xupercore/lib/utils"
+	"github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/base"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/context"
+	cctx "github.com/superconsensus-chain/xupercore/kernel/consensus/context"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/def"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/mock"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
+	"github.com/superconsensus-chain/xupercore/lib/utils"
 )
 
 var (

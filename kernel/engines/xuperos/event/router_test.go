@@ -2,7 +2,7 @@ package event
 
 import (
 	"encoding/hex"
-	"github.com/xuperchain/xupercore/protos"
+	"github.com/superconsensus-chain/xupercore/protos"
 	"testing"
 
 	"github.com/golang/protobuf/proto"

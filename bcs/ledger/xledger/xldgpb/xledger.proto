@@ -4,7 +4,7 @@ import "xupercore/protos/contract.proto";
 import "xupercore/protos/ledger.proto";
 import "xupercore/protos/permission.proto";
 
-option go_package = "github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb";
+option go_package = "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb";
 
 package xldgpb;
 

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/xuperchain/xupercore/protos";
+option go_package = "github.com/superconsensus-chain/xupercore/protos";
 
 package protos;
 

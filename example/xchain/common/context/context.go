@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/xuperchain/xupercore/example/xchain/common/def"
-	"github.com/xuperchain/xupercore/kernel/engines/xuperos/common"
-	"github.com/xuperchain/xupercore/lib/logs"
-	"github.com/xuperchain/xupercore/lib/timer"
+	"github.com/superconsensus-chain/xupercore/example/xchain/common/def"
+	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/common"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
+	"github.com/superconsensus-chain/xupercore/lib/timer"
 )
 
 const (

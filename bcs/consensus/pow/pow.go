@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/xuperchain/xupercore/kernel/common/xcontext"
-	"github.com/xuperchain/xupercore/kernel/consensus"
-	"github.com/xuperchain/xupercore/kernel/consensus/base"
-	"github.com/xuperchain/xupercore/kernel/consensus/context"
-	"github.com/xuperchain/xupercore/kernel/consensus/def"
+	"github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/base"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/context"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/def"
 )
 
 var (

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/xuperchain/xupercore/kernel/ledger"
+	"github.com/superconsensus-chain/xupercore/kernel/ledger"
 )
 
 func TestXMCachePutGet(t *testing.T) {

@@ -1,9 +1,9 @@
 package consensus
 
 import (
-	"github.com/xuperchain/xupercore/kernel/common/xcontext"
-	"github.com/xuperchain/xupercore/kernel/consensus/base"
-	cctx "github.com/xuperchain/xupercore/kernel/consensus/context"
+	"github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/base"
+	cctx "github.com/superconsensus-chain/xupercore/kernel/consensus/context"
 )
 
 // ConsensusInterface 定义了一个共识实例需要实现的接口，用于kernel外的调用

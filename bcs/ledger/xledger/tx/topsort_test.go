@@ -5,8 +5,8 @@ import (
 	"sort"
 	"testing"
 
-	pb "github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb"
-	"github.com/xuperchain/xupercore/protos"
+	pb "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
+	"github.com/superconsensus-chain/xupercore/protos"
 )
 
 // 无环case

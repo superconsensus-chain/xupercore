@@ -5,8 +5,8 @@ import (
 	"sort"
 	"sync"
 
-	xconf "github.com/xuperchain/xupercore/kernel/common/xconfig"
-	"github.com/xuperchain/xupercore/lib/logs"
+	xconf "github.com/superconsensus-chain/xupercore/kernel/common/xconfig"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
 )
 
 // 区块链引擎

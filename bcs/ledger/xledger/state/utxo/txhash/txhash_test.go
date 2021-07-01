@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	pb "github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb"
-	crypto_client "github.com/xuperchain/xupercore/lib/crypto/client"
+	pb "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
+	crypto_client "github.com/superconsensus-chain/xupercore/lib/crypto/client"
 )
 
 var (

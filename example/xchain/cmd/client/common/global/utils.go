@@ -3,8 +3,8 @@ package global
 import (
 	"crypto/ecdsa"
 
-	"github.com/xuperchain/xupercore/kernel/common/xaddress"
-	cryptoClient "github.com/xuperchain/xupercore/lib/crypto/client"
+	"github.com/superconsensus-chain/xupercore/kernel/common/xaddress"
+	cryptoClient "github.com/superconsensus-chain/xupercore/lib/crypto/client"
 )
 
 // 从本地文件加载账户地址信息

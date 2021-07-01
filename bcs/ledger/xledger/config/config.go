@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/xuperchain/xupercore/lib/utils"
+	"github.com/superconsensus-chain/xupercore/lib/utils"
 
 	"github.com/spf13/viper"
 )

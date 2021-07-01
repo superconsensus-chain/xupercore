@@ -9,7 +9,7 @@ import (
 	"github.com/hyperledger/burrow/crypto"
 	"github.com/hyperledger/burrow/permission"
 
-	"github.com/xuperchain/xupercore/kernel/contract/bridge"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/bridge"
 )
 
 type stateManager struct {

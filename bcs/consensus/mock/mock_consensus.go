@@ -6,13 +6,13 @@ import (
 	"time"
 
 	log "github.com/xuperchain/log15"
-	"github.com/xuperchain/xupercore/kernel/common/xcontext"
-	cctx "github.com/xuperchain/xupercore/kernel/consensus/context"
-	kmock "github.com/xuperchain/xupercore/kernel/consensus/mock"
-	"github.com/xuperchain/xupercore/kernel/contract"
-	"github.com/xuperchain/xupercore/lib/crypto/client"
-	"github.com/xuperchain/xupercore/lib/logs"
-	"github.com/xuperchain/xupercore/lib/utils"
+	"github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	cctx "github.com/superconsensus-chain/xupercore/kernel/consensus/context"
+	kmock "github.com/superconsensus-chain/xupercore/kernel/consensus/mock"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
+	"github.com/superconsensus-chain/xupercore/lib/crypto/client"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
+	"github.com/superconsensus-chain/xupercore/lib/utils"
 )
 
 var (

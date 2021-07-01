@@ -17,7 +17,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/xuperchain/xupercore/kernel/network/config"
+	"github.com/superconsensus-chain/xupercore/kernel/network/config"
 )
 
 func NewTLS(path, serviceName string) (credentials.TransportCredentials, error) {

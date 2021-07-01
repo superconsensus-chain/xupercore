@@ -9,8 +9,8 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb"
-	"github.com/xuperchain/xupercore/example/xchain/common/xchainpb"
+	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
+	"github.com/superconsensus-chain/xupercore/example/xchain/common/xchainpb"
 )
 
 // HexID bytes

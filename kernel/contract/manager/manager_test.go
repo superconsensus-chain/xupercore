@@ -3,10 +3,10 @@ package manager
 import (
 	"testing"
 
-	"github.com/xuperchain/xupercore/kernel/contract"
-	_ "github.com/xuperchain/xupercore/kernel/contract/kernel"
-	"github.com/xuperchain/xupercore/kernel/contract/mock"
-	"github.com/xuperchain/xupercore/kernel/contract/sandbox"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
+	_ "github.com/superconsensus-chain/xupercore/kernel/contract/kernel"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/mock"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/sandbox"
 )
 
 var contractConfig = &contract.ContractConfig{

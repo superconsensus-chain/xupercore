@@ -6,7 +6,7 @@ package xldgpb
 import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	protos "github.com/xuperchain/xupercore/protos"
+	protos "github.com/superconsensus-chain/xupercore/protos"
 	math "math"
 )
 

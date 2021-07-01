@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	"github.com/xuperchain/crypto/core/account"
-	"github.com/xuperchain/xupercore/lib/crypto/client/base"
-	"github.com/xuperchain/xupercore/lib/crypto/client/gm"
-	"github.com/xuperchain/xupercore/lib/crypto/client/xchain"
+	"github.com/superconsensus-chain/xupercore/lib/crypto/client/base"
+	"github.com/superconsensus-chain/xupercore/lib/crypto/client/gm"
+	"github.com/superconsensus-chain/xupercore/lib/crypto/client/xchain"
 )
 
 const (

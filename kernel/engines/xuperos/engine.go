@@ -6,14 +6,14 @@ import (
 	"path/filepath"
 	"sync"
 
-	xconf "github.com/xuperchain/xupercore/kernel/common/xconfig"
-	"github.com/xuperchain/xupercore/kernel/engines"
-	"github.com/xuperchain/xupercore/kernel/engines/xuperos/agent"
-	"github.com/xuperchain/xupercore/kernel/engines/xuperos/common"
-	engconf "github.com/xuperchain/xupercore/kernel/engines/xuperos/config"
-	xnet "github.com/xuperchain/xupercore/kernel/engines/xuperos/net"
-	"github.com/xuperchain/xupercore/lib/logs"
-	"github.com/xuperchain/xupercore/lib/timer"
+	xconf "github.com/superconsensus-chain/xupercore/kernel/common/xconfig"
+	"github.com/superconsensus-chain/xupercore/kernel/engines"
+	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/agent"
+	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/common"
+	engconf "github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/config"
+	xnet "github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/net"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
+	"github.com/superconsensus-chain/xupercore/lib/timer"
 )
 
 // xuperos执行引擎，为公链场景订制区块链引擎

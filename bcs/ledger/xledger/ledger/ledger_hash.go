@@ -8,9 +8,9 @@ import (
 	"math"
 	"sort"
 
-	pb "github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb"
-	"github.com/xuperchain/xupercore/lib/crypto/hash"
-	"github.com/xuperchain/xupercore/lib/utils"
+	pb "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
+	"github.com/superconsensus-chain/xupercore/lib/crypto/hash"
+	"github.com/superconsensus-chain/xupercore/lib/utils"
 )
 
 func getLeafSize(txCount int) int {

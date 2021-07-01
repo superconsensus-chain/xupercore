@@ -2,12 +2,12 @@
 package context
 
 import (
-	"github.com/xuperchain/xupercore/kernel/common/xaddress"
-	xctx "github.com/xuperchain/xupercore/kernel/common/xcontext"
-	"github.com/xuperchain/xupercore/kernel/contract"
-	"github.com/xuperchain/xupercore/kernel/ledger"
-	"github.com/xuperchain/xupercore/kernel/network"
-	cryptoBase "github.com/xuperchain/xupercore/lib/crypto/client/base"
+	"github.com/superconsensus-chain/xupercore/kernel/common/xaddress"
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
+	"github.com/superconsensus-chain/xupercore/kernel/ledger"
+	"github.com/superconsensus-chain/xupercore/kernel/network"
+	cryptoBase "github.com/superconsensus-chain/xupercore/lib/crypto/client/base"
 )
 
 type BlockInterface ledger.BlockHandle

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/viper"
-	"github.com/xuperchain/xupercore/kernel/contract"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
 )
 
 const (

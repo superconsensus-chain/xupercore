@@ -1,7 +1,7 @@
 package govern_token
 
 import (
-	"github.com/xuperchain/xupercore/kernel/consensus/mock"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/mock"
 	"math/big"
 	"testing"
 )

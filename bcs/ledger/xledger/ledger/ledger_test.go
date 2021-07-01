@@ -15,12 +15,12 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"github.com/xuperchain/xupercore/bcs/ledger/xledger/state/utxo/txhash"
-	pb "github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb"
-	"github.com/xuperchain/xupercore/kernel/mock"
-	"github.com/xuperchain/xupercore/lib/logs"
-	_ "github.com/xuperchain/xupercore/lib/storage/kvdb/leveldb"
-	"github.com/xuperchain/xupercore/protos"
+	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/state/utxo/txhash"
+	pb "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
+	"github.com/superconsensus-chain/xupercore/kernel/mock"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
+	_ "github.com/superconsensus-chain/xupercore/lib/storage/kvdb/leveldb"
+	"github.com/superconsensus-chain/xupercore/protos"
 )
 
 const AliceAddress = "TeyyPLpp9L7QAcxHangtcHTu7HUZ6iydY"

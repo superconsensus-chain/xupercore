@@ -45,7 +45,7 @@ sh ./control.sh start
 
 # 参与贡献
 
-https://github.com/xuperchain/xupercore
+https://github.com/superconsensus-chain/xupercore
 
 如果你遇到问题或需要新功能，欢迎到xupercore创建issue。
 

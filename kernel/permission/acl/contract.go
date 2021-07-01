@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/xuperchain/xupercore/kernel/contract"
-	"github.com/xuperchain/xupercore/kernel/contract/sandbox"
-	"github.com/xuperchain/xupercore/kernel/permission/acl/utils"
-	pb "github.com/xuperchain/xupercore/protos"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/sandbox"
+	"github.com/superconsensus-chain/xupercore/kernel/permission/acl/utils"
+	pb "github.com/superconsensus-chain/xupercore/protos"
 )
 
 type KernMethod struct {

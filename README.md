@@ -14,7 +14,7 @@ XuperCore提供了自动生成区块链发行版代码框架的工具，可以�
 
 ```
 // clone项目
-git clone https://github.com/xuperchain/xupercore.git
+git clone https://github.com/superconsensus-chain/xupercore.git
 
 // 生成发行版代码框架，第一个参数是新链名，第二个参数是输出代码库保存目录
 sh ./tools/autogen_chain.sh -n turbo -r bob -o /home/rd/gopath/src
@@ -40,7 +40,7 @@ XuperCore也提供了示例链（example/xchain）实现，初次尝试可以通
 
 ```
 // clone项目
-git clone https://github.com/xuperchain/xupercore.git
+git clone https://github.com/superconsensus-chain/xupercore.git
 
 // 进入工程目录
 cd xupercore

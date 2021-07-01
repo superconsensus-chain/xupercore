@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/xuperchain/xupercore/kernel/contract/proposal/utils"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/proposal/utils"
 )
 
 // Manager manages all timer releated data, providing read/write interface

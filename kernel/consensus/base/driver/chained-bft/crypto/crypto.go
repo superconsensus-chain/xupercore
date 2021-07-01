@@ -6,8 +6,8 @@ import (
 	"errors"
 
 	"github.com/xuperchain/crypto/core/hash"
-	pb "github.com/xuperchain/xupercore/kernel/consensus/base/driver/chained-bft/pb"
-	cctx "github.com/xuperchain/xupercore/kernel/consensus/context"
+	pb "github.com/superconsensus-chain/xupercore/kernel/consensus/base/driver/chained-bft/pb"
+	cctx "github.com/superconsensus-chain/xupercore/kernel/consensus/context"
 )
 
 type CBFTCrypto struct {

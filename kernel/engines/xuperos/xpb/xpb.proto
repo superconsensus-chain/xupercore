@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "xupercore/bcs/ledger/xledger/xldgpb/xledger.proto";
 
-option go_package = "github.com/xuperchain/xupercore/kernel/engines/xuperos/xpb";
+option go_package = "github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/xpb";
 
 package protos;
 

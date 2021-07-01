@@ -1,9 +1,9 @@
 package p2p
 
 import (
-	xctx "github.com/xuperchain/xupercore/kernel/common/xcontext"
-	nctx "github.com/xuperchain/xupercore/kernel/network/context"
-	pb "github.com/xuperchain/xupercore/protos"
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	nctx "github.com/superconsensus-chain/xupercore/kernel/network/context"
+	pb "github.com/superconsensus-chain/xupercore/protos"
 )
 
 // P2P is the p2p server interface

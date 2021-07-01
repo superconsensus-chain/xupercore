@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/xuperchain/xupercore/kernel/common/xcontext"
-	"github.com/xuperchain/xupercore/kernel/consensus"
-	"github.com/xuperchain/xupercore/kernel/consensus/base"
-	cctx "github.com/xuperchain/xupercore/kernel/consensus/context"
-	"github.com/xuperchain/xupercore/kernel/consensus/def"
+	"github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/base"
+	cctx "github.com/superconsensus-chain/xupercore/kernel/consensus/context"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/def"
 )
 
 // 本次single改造支持single的升级，即Miner地址可变

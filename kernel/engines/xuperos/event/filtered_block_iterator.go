@@ -2,9 +2,9 @@ package event
 
 import (
 	"encoding/hex"
-	lpb "github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb"
-	"github.com/xuperchain/xupercore/kernel/contract/sandbox"
-	"github.com/xuperchain/xupercore/protos"
+	lpb "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/sandbox"
+	"github.com/superconsensus-chain/xupercore/protos"
 )
 
 var _ Iterator = (*filteredBlockIterator)(nil)

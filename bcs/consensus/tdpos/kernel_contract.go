@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	common "github.com/xuperchain/xupercore/kernel/consensus/base/common"
-	"github.com/xuperchain/xupercore/kernel/contract/proposal/utils"
+	common "github.com/superconsensus-chain/xupercore/kernel/consensus/base/common"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/proposal/utils"
 
-	"github.com/xuperchain/xupercore/kernel/contract"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
 )
 
 // 本文件实现tdpos的原Run方法，现全部移至三代合约

@@ -12,7 +12,7 @@ import (
 
 	units "github.com/docker/go-units"
 	log "github.com/xuperchain/log15"
-	"github.com/xuperchain/xupercore/kernel/contract"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
 )
 
 var (

@@ -3,11 +3,11 @@ package service
 import (
 	"fmt"
 
-	sconf "github.com/xuperchain/xupercore/example/xchain/common/config"
-	"github.com/xuperchain/xupercore/example/xchain/common/def"
-	"github.com/xuperchain/xupercore/example/xchain/service/rpc"
-	"github.com/xuperchain/xupercore/kernel/engines"
-	"github.com/xuperchain/xupercore/lib/logs"
+	sconf "github.com/superconsensus-chain/xupercore/example/xchain/common/config"
+	"github.com/superconsensus-chain/xupercore/example/xchain/common/def"
+	"github.com/superconsensus-chain/xupercore/example/xchain/service/rpc"
+	"github.com/superconsensus-chain/xupercore/kernel/engines"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
 )
 
 // 由于需要同时启动多个服务组件，采用注册机制管理

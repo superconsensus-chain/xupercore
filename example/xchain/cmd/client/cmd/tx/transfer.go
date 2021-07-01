@@ -9,16 +9,16 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/xuperchain/xupercore/bcs/ledger/xledger/state/utxo/txhash"
-	"github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb"
-	"github.com/xuperchain/xupercore/example/xchain/cmd/client/client"
-	"github.com/xuperchain/xupercore/example/xchain/cmd/client/common/global"
-	xdef "github.com/xuperchain/xupercore/example/xchain/common/def"
-	"github.com/xuperchain/xupercore/example/xchain/common/xchainpb"
-	cryptoClient "github.com/xuperchain/xupercore/lib/crypto/client"
-	cryptoBase "github.com/xuperchain/xupercore/lib/crypto/client/base"
-	"github.com/xuperchain/xupercore/lib/utils"
-	"github.com/xuperchain/xupercore/protos"
+	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/state/utxo/txhash"
+	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
+	"github.com/superconsensus-chain/xupercore/example/xchain/cmd/client/client"
+	"github.com/superconsensus-chain/xupercore/example/xchain/cmd/client/common/global"
+	xdef "github.com/superconsensus-chain/xupercore/example/xchain/common/def"
+	"github.com/superconsensus-chain/xupercore/example/xchain/common/xchainpb"
+	cryptoClient "github.com/superconsensus-chain/xupercore/lib/crypto/client"
+	cryptoBase "github.com/superconsensus-chain/xupercore/lib/crypto/client/base"
+	"github.com/superconsensus-chain/xupercore/lib/utils"
+	"github.com/superconsensus-chain/xupercore/protos"
 )
 
 var (

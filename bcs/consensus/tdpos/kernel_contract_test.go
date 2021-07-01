@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/xuperchain/xupercore/kernel/consensus/mock"
-	kmock "github.com/xuperchain/xupercore/kernel/consensus/mock"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/mock"
+	kmock "github.com/superconsensus-chain/xupercore/kernel/consensus/mock"
 )
 
 var nominate_key = "tdpos_0_nominate"

@@ -2,14 +2,14 @@ package p2p
 
 import (
 	"errors"
-	"github.com/xuperchain/xupercore/kernel/network/def"
+	"github.com/superconsensus-chain/xupercore/kernel/network/def"
 	"hash/crc32"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/snappy"
 
-	"github.com/xuperchain/xupercore/lib/utils"
-	pb "github.com/xuperchain/xupercore/protos"
+	"github.com/superconsensus-chain/xupercore/lib/utils"
+	pb "github.com/superconsensus-chain/xupercore/protos"
 )
 
 var (

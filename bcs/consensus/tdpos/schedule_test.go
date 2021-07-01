@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	common "github.com/xuperchain/xupercore/kernel/consensus/base/common"
-	kmock "github.com/xuperchain/xupercore/kernel/consensus/mock"
+	common "github.com/superconsensus-chain/xupercore/kernel/consensus/base/common"
+	kmock "github.com/superconsensus-chain/xupercore/kernel/consensus/mock"
 )
 
 func Test(t *testing.T) {

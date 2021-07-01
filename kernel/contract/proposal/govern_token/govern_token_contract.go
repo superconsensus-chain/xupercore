@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"math/big"
 
-	xledger "github.com/xuperchain/xupercore/bcs/ledger/xledger/ledger"
-	"github.com/xuperchain/xupercore/kernel/contract"
-	"github.com/xuperchain/xupercore/kernel/contract/proposal/utils"
+	xledger "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/ledger"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/proposal/utils"
 )
 
 type KernMethod struct {

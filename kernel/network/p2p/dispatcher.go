@@ -7,13 +7,13 @@ import (
 	"sync"
 	"time"
 
-	xctx "github.com/xuperchain/xupercore/kernel/common/xcontext"
-	nctx "github.com/xuperchain/xupercore/kernel/network/context"
-	"github.com/xuperchain/xupercore/lib/crypto/hash"
-	"github.com/xuperchain/xupercore/lib/logs"
-	"github.com/xuperchain/xupercore/lib/timer"
-	"github.com/xuperchain/xupercore/lib/utils"
-	pb "github.com/xuperchain/xupercore/protos"
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	nctx "github.com/superconsensus-chain/xupercore/kernel/network/context"
+	"github.com/superconsensus-chain/xupercore/lib/crypto/hash"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
+	"github.com/superconsensus-chain/xupercore/lib/timer"
+	"github.com/superconsensus-chain/xupercore/lib/utils"
+	pb "github.com/superconsensus-chain/xupercore/protos"
 
 	"github.com/patrickmn/go-cache"
 )

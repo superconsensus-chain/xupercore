@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb"
-	"github.com/xuperchain/xupercore/example/xchain/cmd/client/common/global"
-	xdef "github.com/xuperchain/xupercore/example/xchain/common/def"
-	"github.com/xuperchain/xupercore/example/xchain/common/xchainpb"
-	"github.com/xuperchain/xupercore/lib/utils"
+	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
+	"github.com/superconsensus-chain/xupercore/example/xchain/cmd/client/common/global"
+	xdef "github.com/superconsensus-chain/xupercore/example/xchain/common/def"
+	"github.com/superconsensus-chain/xupercore/example/xchain/common/xchainpb"
+	"github.com/superconsensus-chain/xupercore/lib/utils"
 
 	"google.golang.org/grpc"
 )

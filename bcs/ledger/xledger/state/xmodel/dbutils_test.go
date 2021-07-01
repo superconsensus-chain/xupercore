@@ -3,7 +3,7 @@ package xmodel
 import (
 	"testing"
 
-	kledger "github.com/xuperchain/xupercore/kernel/ledger"
+	kledger "github.com/superconsensus-chain/xupercore/kernel/ledger"
 )
 
 func TestEqual(t *testing.T) {

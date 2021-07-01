@@ -3,9 +3,9 @@ package propose
 import (
 	"encoding/json"
 	"fmt"
-	pb "github.com/xuperchain/xupercore/protos"
+	pb "github.com/superconsensus-chain/xupercore/protos"
 
-	"github.com/xuperchain/xupercore/kernel/contract/proposal/utils"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/proposal/utils"
 )
 
 // Manager manages all timer releated data, providing read/write interface

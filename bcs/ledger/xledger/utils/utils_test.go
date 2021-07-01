@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/xuperchain/xupercore/kernel/mock"
-	_ "github.com/xuperchain/xupercore/lib/storage/kvdb/leveldb"
+	"github.com/superconsensus-chain/xupercore/kernel/mock"
+	_ "github.com/superconsensus-chain/xupercore/lib/storage/kvdb/leveldb"
 )
 
 func TestCreateLedger(t *testing.T) {

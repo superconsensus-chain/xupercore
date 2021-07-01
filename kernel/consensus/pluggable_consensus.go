@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/xuperchain/xupercore/kernel/common/xcontext"
-	"github.com/xuperchain/xupercore/kernel/consensus/base"
-	common "github.com/xuperchain/xupercore/kernel/consensus/base/common"
-	cctx "github.com/xuperchain/xupercore/kernel/consensus/context"
-	"github.com/xuperchain/xupercore/kernel/consensus/def"
-	"github.com/xuperchain/xupercore/kernel/contract"
+	"github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/base"
+	common "github.com/superconsensus-chain/xupercore/kernel/consensus/base/common"
+	cctx "github.com/superconsensus-chain/xupercore/kernel/consensus/context"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/def"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
 )
 
 const (

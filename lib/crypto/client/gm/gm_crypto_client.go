@@ -6,7 +6,7 @@ package gm
 
 import (
 	"github.com/xuperchain/crypto/client/service/gm"
-	"github.com/xuperchain/xupercore/lib/crypto/client/base"
+	"github.com/superconsensus-chain/xupercore/lib/crypto/client/base"
 )
 
 // make sure this plugin implemented the interface

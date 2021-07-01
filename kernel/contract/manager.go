@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/xuperchain/xupercore/kernel/common/xconfig"
-	"github.com/xuperchain/xupercore/kernel/ledger"
+	"github.com/superconsensus-chain/xupercore/kernel/common/xconfig"
+	"github.com/superconsensus-chain/xupercore/kernel/ledger"
 )
 
 var (

@@ -3,8 +3,8 @@ package chained_bft
 import (
 	"testing"
 
-	cCrypto "github.com/xuperchain/xupercore/kernel/consensus/base/driver/chained-bft/crypto"
-	chainedBftPb "github.com/xuperchain/xupercore/kernel/consensus/base/driver/chained-bft/pb"
+	cCrypto "github.com/superconsensus-chain/xupercore/kernel/consensus/base/driver/chained-bft/crypto"
+	chainedBftPb "github.com/superconsensus-chain/xupercore/kernel/consensus/base/driver/chained-bft/pb"
 )
 
 func TestCalVotesThreshold(t *testing.T) {

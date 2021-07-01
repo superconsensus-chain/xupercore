@@ -3,8 +3,8 @@ package xuperos
 import (
 	"fmt"
 
-	"github.com/xuperchain/xupercore/kernel/engines/xuperos/common"
-	"github.com/xuperchain/xupercore/kernel/network"
+	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/common"
+	"github.com/superconsensus-chain/xupercore/kernel/network"
 )
 
 // 代理依赖组件实例化操作，方便mock单测和并行开发

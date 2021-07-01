@@ -4,9 +4,9 @@ import (
 	"sync"
 
 	log15 "github.com/xuperchain/log15"
-	"github.com/xuperchain/xupercore/kernel/contract"
-	"github.com/xuperchain/xupercore/kernel/contract/bridge/pb"
-	"github.com/xuperchain/xupercore/protos"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/bridge/pb"
+	"github.com/superconsensus-chain/xupercore/protos"
 )
 
 // Context 保存了合约执行的内核状态，

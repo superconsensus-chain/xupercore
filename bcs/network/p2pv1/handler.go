@@ -2,9 +2,9 @@ package p2pv1
 
 import (
 	"github.com/patrickmn/go-cache"
-	xctx "github.com/xuperchain/xupercore/kernel/common/xcontext"
-	"github.com/xuperchain/xupercore/kernel/network/p2p"
-	pb "github.com/xuperchain/xupercore/protos"
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	"github.com/superconsensus-chain/xupercore/kernel/network/p2p"
+	pb "github.com/superconsensus-chain/xupercore/protos"
 )
 
 func (p *P2PServerV1) GetPeerInfo(addresses []string) ([]*pb.PeerInfo, error) {

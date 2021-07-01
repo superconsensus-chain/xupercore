@@ -5,16 +5,16 @@ import (
 	"path/filepath"
 	"time"
 
-	_ "github.com/xuperchain/xupercore/bcs/network/p2pv2"
-	"github.com/xuperchain/xupercore/kernel/common/xconfig"
-	chainedBft "github.com/xuperchain/xupercore/kernel/consensus/base/driver/chained-bft"
-	cCrypto "github.com/xuperchain/xupercore/kernel/consensus/base/driver/chained-bft/crypto"
-	cctx "github.com/xuperchain/xupercore/kernel/consensus/context"
-	"github.com/xuperchain/xupercore/kernel/network"
-	nctx "github.com/xuperchain/xupercore/kernel/network/context"
-	"github.com/xuperchain/xupercore/lib/crypto/client"
-	"github.com/xuperchain/xupercore/lib/logs"
-	"github.com/xuperchain/xupercore/lib/utils"
+	_ "github.com/superconsensus-chain/xupercore/bcs/network/p2pv2"
+	"github.com/superconsensus-chain/xupercore/kernel/common/xconfig"
+	chainedBft "github.com/superconsensus-chain/xupercore/kernel/consensus/base/driver/chained-bft"
+	cCrypto "github.com/superconsensus-chain/xupercore/kernel/consensus/base/driver/chained-bft/crypto"
+	cctx "github.com/superconsensus-chain/xupercore/kernel/consensus/context"
+	"github.com/superconsensus-chain/xupercore/kernel/network"
+	nctx "github.com/superconsensus-chain/xupercore/kernel/network/context"
+	"github.com/superconsensus-chain/xupercore/lib/crypto/client"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
+	"github.com/superconsensus-chain/xupercore/lib/utils"
 )
 
 var (

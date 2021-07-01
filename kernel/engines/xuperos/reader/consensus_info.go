@@ -1,10 +1,10 @@
 package reader
 
 import (
-	xctx "github.com/xuperchain/xupercore/kernel/common/xcontext"
-	consBase "github.com/xuperchain/xupercore/kernel/consensus/base"
-	"github.com/xuperchain/xupercore/kernel/engines/xuperos/common"
-	"github.com/xuperchain/xupercore/lib/logs"
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	consBase "github.com/superconsensus-chain/xupercore/kernel/consensus/base"
+	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/common"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
 )
 
 type ConsensusReader interface {

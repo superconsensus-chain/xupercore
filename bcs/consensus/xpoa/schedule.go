@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	common "github.com/xuperchain/xupercore/kernel/consensus/base/common"
-	"github.com/xuperchain/xupercore/kernel/consensus/context"
-	cctx "github.com/xuperchain/xupercore/kernel/consensus/context"
-	"github.com/xuperchain/xupercore/lib/logs"
+	common "github.com/superconsensus-chain/xupercore/kernel/consensus/base/common"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/context"
+	cctx "github.com/superconsensus-chain/xupercore/kernel/consensus/context"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
 )
 
 // xpoaSchedule 实现了ProposerElectionInterface接口，接口定义了validators操作

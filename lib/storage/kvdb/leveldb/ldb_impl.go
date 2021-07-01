@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
-	"github.com/xuperchain/xupercore/lib/storage/kvdb"
+	"github.com/superconsensus-chain/xupercore/lib/storage/kvdb"
 )
 
 // LDBDatabase define data structure of storage

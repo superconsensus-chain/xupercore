@@ -1,8 +1,8 @@
 package agent
 
 import (
-	"github.com/xuperchain/xupercore/kernel/engines/xuperos/common"
-	"github.com/xuperchain/xupercore/lib/logs"
+	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/common"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
 )
 
 type ChainCoreAgent struct {

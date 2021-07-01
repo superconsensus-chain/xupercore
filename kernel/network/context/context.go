@@ -4,12 +4,12 @@ package context
 import (
 	"fmt"
 
-	xconf "github.com/xuperchain/xupercore/kernel/common/xconfig"
-	xctx "github.com/xuperchain/xupercore/kernel/common/xcontext"
-	nconf "github.com/xuperchain/xupercore/kernel/network/config"
-	"github.com/xuperchain/xupercore/kernel/network/def"
-	"github.com/xuperchain/xupercore/lib/logs"
-	"github.com/xuperchain/xupercore/lib/timer"
+	xconf "github.com/superconsensus-chain/xupercore/kernel/common/xconfig"
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	nconf "github.com/superconsensus-chain/xupercore/kernel/network/config"
+	"github.com/superconsensus-chain/xupercore/kernel/network/def"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
+	"github.com/superconsensus-chain/xupercore/lib/timer"
 )
 
 // 网络组件运行上下文环境

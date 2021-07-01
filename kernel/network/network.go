@@ -5,10 +5,10 @@ import (
 	"sort"
 	"sync"
 
-	xctx "github.com/xuperchain/xupercore/kernel/common/xcontext"
-	nctx "github.com/xuperchain/xupercore/kernel/network/context"
-	"github.com/xuperchain/xupercore/kernel/network/p2p"
-	pb "github.com/xuperchain/xupercore/protos"
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	nctx "github.com/superconsensus-chain/xupercore/kernel/network/context"
+	"github.com/superconsensus-chain/xupercore/kernel/network/p2p"
+	pb "github.com/superconsensus-chain/xupercore/protos"
 )
 
 // 创建P2PServer实例方法

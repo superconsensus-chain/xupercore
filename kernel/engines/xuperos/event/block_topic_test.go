@@ -2,7 +2,7 @@ package event
 
 import (
 	"encoding/hex"
-	"github.com/xuperchain/xupercore/protos"
+	"github.com/superconsensus-chain/xupercore/protos"
 	"strconv"
 	"testing"
 	"time"

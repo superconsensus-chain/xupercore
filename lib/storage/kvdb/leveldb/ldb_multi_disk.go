@@ -5,7 +5,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	"github.com/xuperchain/xupercore/lib/storage/mstorage"
+	"github.com/superconsensus-chain/xupercore/lib/storage/mstorage"
 )
 
 // Open opens an instance of LDB with parameters (ldb path and other options)

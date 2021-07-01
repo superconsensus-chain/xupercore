@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/xuperchain/xupercore/kernel/contract"
-	_ "github.com/xuperchain/xupercore/kernel/contract/kernel"
-	_ "github.com/xuperchain/xupercore/kernel/contract/manager"
-	"github.com/xuperchain/xupercore/kernel/contract/mock"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
+	_ "github.com/superconsensus-chain/xupercore/kernel/contract/kernel"
+	_ "github.com/superconsensus-chain/xupercore/kernel/contract/manager"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/mock"
 )
 
 var contractConfig = &contract.ContractConfig{

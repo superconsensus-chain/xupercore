@@ -2,15 +2,15 @@ package p2pv1
 
 import (
 	"errors"
-	xctx "github.com/xuperchain/xupercore/kernel/common/xcontext"
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
 	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	prom "github.com/prometheus/client_golang/prometheus"
 
-	"github.com/xuperchain/xupercore/kernel/network/p2p"
-	pb "github.com/xuperchain/xupercore/protos"
+	"github.com/superconsensus-chain/xupercore/kernel/network/p2p"
+	pb "github.com/superconsensus-chain/xupercore/protos"
 )
 
 var (

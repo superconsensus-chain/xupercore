@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/xuperchain/xupercore/kernel/permission/acl/base"
-	actx "github.com/xuperchain/xupercore/kernel/permission/acl/context"
-	"github.com/xuperchain/xupercore/kernel/permission/acl/utils"
-	pb "github.com/xuperchain/xupercore/protos"
+	"github.com/superconsensus-chain/xupercore/kernel/permission/acl/base"
+	actx "github.com/superconsensus-chain/xupercore/kernel/permission/acl/context"
+	"github.com/superconsensus-chain/xupercore/kernel/permission/acl/utils"
+	pb "github.com/superconsensus-chain/xupercore/protos"
 )
 
 // Manager manages all ACL releated data, providing read/write interface for ACL table

@@ -8,10 +8,10 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
 
-	xctx "github.com/xuperchain/xupercore/kernel/common/xcontext"
-	nctx "github.com/xuperchain/xupercore/kernel/network/context"
-	"github.com/xuperchain/xupercore/lib/cache"
-	"github.com/xuperchain/xupercore/lib/logs"
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	nctx "github.com/superconsensus-chain/xupercore/kernel/network/context"
+	"github.com/superconsensus-chain/xupercore/lib/cache"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
 )
 
 // define common errors

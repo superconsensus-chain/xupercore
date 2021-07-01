@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/xuperchain/xupercore/kernel/consensus/mock"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus/mock"
 )
 
 var (

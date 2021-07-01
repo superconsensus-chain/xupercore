@@ -3,14 +3,14 @@ package models
 import (
 	"math/big"
 
-	lpb "github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb"
-	sctx "github.com/xuperchain/xupercore/example/xchain/common/context"
-	xctx "github.com/xuperchain/xupercore/kernel/common/xcontext"
-	ecom "github.com/xuperchain/xupercore/kernel/engines/xuperos/common"
-	"github.com/xuperchain/xupercore/kernel/engines/xuperos/reader"
-	"github.com/xuperchain/xupercore/kernel/engines/xuperos/xpb"
-	"github.com/xuperchain/xupercore/lib/logs"
-	"github.com/xuperchain/xupercore/protos"
+	lpb "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
+	sctx "github.com/superconsensus-chain/xupercore/example/xchain/common/context"
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	ecom "github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/common"
+	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/reader"
+	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/xpb"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
+	"github.com/superconsensus-chain/xupercore/protos"
 )
 
 type ChainHandle struct {

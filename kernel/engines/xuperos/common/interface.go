@@ -1,22 +1,22 @@
 package common
 
 import (
-	"github.com/xuperchain/xupercore/bcs/ledger/xledger/ledger"
-	"github.com/xuperchain/xupercore/bcs/ledger/xledger/state"
-	lpb "github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb"
-	xconf "github.com/xuperchain/xupercore/kernel/common/xconfig"
-	xctx "github.com/xuperchain/xupercore/kernel/common/xcontext"
-	"github.com/xuperchain/xupercore/kernel/consensus"
-	"github.com/xuperchain/xupercore/kernel/contract"
-	governToken "github.com/xuperchain/xupercore/kernel/contract/proposal/govern_token"
-	"github.com/xuperchain/xupercore/kernel/contract/proposal/propose"
-	timerTask "github.com/xuperchain/xupercore/kernel/contract/proposal/timer"
-	"github.com/xuperchain/xupercore/kernel/engines"
-	kledger "github.com/xuperchain/xupercore/kernel/ledger"
-	"github.com/xuperchain/xupercore/kernel/network"
-	aclBase "github.com/xuperchain/xupercore/kernel/permission/acl/base"
-	cryptoBase "github.com/xuperchain/xupercore/lib/crypto/client/base"
-	"github.com/xuperchain/xupercore/protos"
+	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/ledger"
+	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/state"
+	lpb "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
+	xconf "github.com/superconsensus-chain/xupercore/kernel/common/xconfig"
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	"github.com/superconsensus-chain/xupercore/kernel/consensus"
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
+	governToken "github.com/superconsensus-chain/xupercore/kernel/contract/proposal/govern_token"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/proposal/propose"
+	timerTask "github.com/superconsensus-chain/xupercore/kernel/contract/proposal/timer"
+	"github.com/superconsensus-chain/xupercore/kernel/engines"
+	kledger "github.com/superconsensus-chain/xupercore/kernel/ledger"
+	"github.com/superconsensus-chain/xupercore/kernel/network"
+	aclBase "github.com/superconsensus-chain/xupercore/kernel/permission/acl/base"
+	cryptoBase "github.com/superconsensus-chain/xupercore/lib/crypto/client/base"
+	"github.com/superconsensus-chain/xupercore/protos"
 )
 
 type Chain interface {

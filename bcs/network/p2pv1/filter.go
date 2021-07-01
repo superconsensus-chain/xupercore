@@ -1,6 +1,6 @@
 package p2pv1
 
-import "github.com/xuperchain/xupercore/kernel/network/def"
+import "github.com/superconsensus-chain/xupercore/kernel/network/def"
 
 // PeerFilter the interface for filter peers
 type PeerFilter interface {

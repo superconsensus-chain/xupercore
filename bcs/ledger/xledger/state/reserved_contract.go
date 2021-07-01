@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"html/template"
 
-	pb "github.com/xuperchain/xupercore/bcs/ledger/xledger/xldgpb"
-	"github.com/xuperchain/xupercore/protos"
+	pb "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
+	"github.com/superconsensus-chain/xupercore/protos"
 )
 
 // reservedArgs used to get contractnames from InvokeRPCRequest

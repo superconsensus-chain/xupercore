@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/xuperchain/xupercore/kernel/common/xutils"
-	"github.com/xuperchain/xupercore/lib/utils"
+	"github.com/superconsensus-chain/xupercore/kernel/common/xutils"
+	"github.com/superconsensus-chain/xupercore/lib/utils"
 
 	"github.com/spf13/viper"
 )

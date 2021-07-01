@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"fmt"
 
-	xctx "github.com/xuperchain/xupercore/kernel/common/xcontext"
-	"github.com/xuperchain/xupercore/kernel/engines/xuperos/common"
-	"github.com/xuperchain/xupercore/kernel/engines/xuperos/xpb"
-	"github.com/xuperchain/xupercore/lib/logs"
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
+	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/common"
+	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/xpb"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
 )
 
 type ChainReader interface {
