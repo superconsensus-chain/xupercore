@@ -3,7 +3,7 @@ plugins/
 output/
 test/
 testnet/
-logs/
+
 .compile_cache
 .autogen
 
@@ -31,6 +31,4 @@ logs/
 # idea
 .idea
 
-# Log files
-*.log
-*.log.wf
+
