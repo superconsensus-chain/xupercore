@@ -4,11 +4,9 @@ package state
 import (
 	"bytes"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/state/utxo/txhash"
-	"github.com/superconsensus-chain/xupercore/kernel/consensus/mock"
 	"math/big"
 	"path/filepath"
 	"strconv"
@@ -161,20 +159,20 @@ func NewState(sctx *context.StateCtx) (*State, error) {
 	return obj, nil
 }
 
-func NewM() map[string]map[string][]byte {
-	a := make(map[string]map[string][]byte)
-	return a
-}
-
-//构建参数，合约那边需要
-func NewNominateArgs(from []byte , to []byte,amount []byte ) map[string][]byte {
-	a := make(map[string][]byte)
-	a["from"] = from
-	a["amount"] = amount
-	a["to"] = to
-	a["lock_type"] = []byte("tdpos")
-	return a
-}
+//func NewM() map[string]map[string][]byte {
+//	a := make(map[string]map[string][]byte)
+//	return a
+//}
+//
+////构建参数，合约那边需要
+//func NewNominateArgs(from []byte , to []byte,amount []byte ) map[string][]byte {
+//	a := make(map[string][]byte)
+//	a["from"] = from
+//	a["amount"] = amount
+//	a["to"] = to
+//	a["lock_type"] = []byte("tdpos")
+//	return a
+//}
 
 
 func (t *State) SetAclMG(aclMgr aclBase.AclManager) {
@@ -794,174 +792,174 @@ func (t *State) doTxSync(tx *pb.Transaction) error {
 
 func (t *State) checkTxState(tx *pb.Transaction,batch kvdb.Batch)(error){
 
-	testa := "lalala" //测试，治理代币持有人
-	testb := "hahaha" //测试，转给此人表示申请解冻
-
-	for _ , data := range tx.TxOutputs {
-
-		//购买治理代币
-		if string(data.ToAddr) == testa {
-			KernMethod := new(governToken.KernMethod)
-			if len(tx.TxInputs) > 0 {
-				fakeCtx := mock.NewFakeKContext(NewNominateArgs(data.ToAddr,tx.TxInputs[0].FromAddr,data.Amount ), NewM())
-				 error := KernMethod.AddTokens(fakeCtx)
-				if error != nil {
-					fmt.Printf("D__购买治理代币失败， %s \n",error)
-					return error
-				}
-				//购买的交易id以及金额写入资产冻结表
-				keytalbe := "amount_" + string(tx.TxInputs[0].FromAddr)
-				//查看用户是否冻结过
-				PbTxBuf, kvErr := t.sctx.Ledger.ConfirmedTable.Get([]byte(keytalbe))
-				table := &protos.FrozenAssetsTable{}
-				if(kvErr != nil){
-					fmt.Printf("D__用户%s第一次冻结\n",string(tx.TxInputs[0].FromAddr))
-				}else {
-					parserErr := proto.Unmarshal(PbTxBuf, table)
-					if parserErr != nil {
-						fmt.Printf("D__购买治理代币时读FrozenAssetsTable表错误\n")
-						return parserErr
-					}
-				}
-				//拿取冻结的金额
-				tabledata := &protos.FrozenDetails{
-					Timestamp:        time.Now().UnixNano(),
-				}
-				if table.FrozenDetail == nil {
-					table.FrozenDetail = make(map[string]*protos.FrozenDetails)
-				}
-				tabledata.Amount = big.NewInt(0).SetBytes(data.Amount).String()
-				table.FrozenDetail[hex.EncodeToString(tx.Txid)] = tabledata
-				//开始写表
-				pbTxBuf, err := proto.Marshal(table)
-				if err != nil {
-					fmt.Printf("D__解析FrozenAssetsTable失败\n")
-					return err
-				}
-				batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
-
-			}else {
-				return errors.New("D__TxInputs 必须大于0 \n")
-			}
-
-		}
-
-		//出售治理代币
-		if string(data.ToAddr) == testb {
-
-			//解析desc数据
-			txDesc := &TxDesc{}
-			jsErr := json.Unmarshal(tx.Desc,txDesc)
-			if jsErr != nil {
-				fmt.Printf("D__解析desc错误 \n")
-				return jsErr
-			}
-			if txDesc.Args["txid"] == nil {
-				fmt.Printf("D__交易id为空 \n")
-				return errors.New("txid can not be null")
-			}
-			var txids []interface{}
-			switch txDesc.Args["txid"].(type) {
-			case []interface{}:
-				txids = txDesc.Args["txid"].([]interface{})
-			default:
-				return  errors.New("D__txid should be []interface{}")
-			}
-			if len(txids) > 100 {
-				return  errors.New("D__每次最多解冻一百条条数据")
-			}
-
-			//记录申请解冻金额
-			//申请解冻这儿，输入的交易一定是冻结表里面的，否则报错，所以先获取该用户冻结信息
-			keytalbe := "amount_" + string(tx.TxInputs[0].FromAddr)
-			//查看用户是否冻结过
-			PbTxBuf, kvErr := t.sctx.Ledger.ConfirmedTable.Get([]byte(keytalbe))
-			table := &protos.FrozenAssetsTable{}
-			if(kvErr != nil){
-				return  errors.New("D__请冻结资产再操作")
-			}else {
-				parserErr := proto.Unmarshal(PbTxBuf, table)
-				if parserErr != nil {
-					fmt.Printf("D__解冻治理代币时读FrozenAssetsTable表错误\n")
-					return parserErr
-				}
-			}
-			//解冻的总余额
-			amount := big.NewInt(0)
-			for _ , v := range txids {
-				value, ok := table.FrozenDetail[v.(string)]
-				if !ok{
-					fmt.Printf("D__此交易不是冻结id或不存在，id： %s \n",v.(string))
-					return errors.New("D__此交易不是冻结id")
-				}
-				tableValue ,_:= new(big.Int).SetString(value.Amount,10)
-				amount.Add(amount,tableValue)
-				////把当前冻结的放回到解冻
-				//tabledata := &pb.FrozenDetails{
-				//	Height : t.sctx.Ledger.GetMeta().TrunkHeight + 1 +20,
-				//	Amount: value.Amount,
-				//}
-				//删除冻结中的
-				delete(table.FrozenDetail,hex.EncodeToString(tx.Txid))
-				//if table.ThawDetail == nil {
-				//	table.ThawDetail =  make(map[string]*pb.FrozenDetails)
-				//}
-				//table.ThawDetail[v.(string)] = tabledata
-			}
-			KernMethod := new(governToken.KernMethod)
-			fakeCtx := mock.NewFakeKContext(NewNominateArgs(data.ToAddr,tx.TxInputs[0].FromAddr,data.Amount ), NewM())
-			error := KernMethod.CheckTokens(fakeCtx,amount)
-			if error != nil {
-				fmt.Printf("D__可撤回量不足， %s \n",error)
-				return error
-			}
-			//修改合约
-			fakeCtx = mock.NewFakeKContext(NewNominateArgs(tx.TxInputs[0].FromAddr,data.ToAddr,amount.Bytes() ), NewM())
-			error = KernMethod.SubTokens(fakeCtx)
-			//理论上不会报错
-			if error != nil {
-				fmt.Printf("D__回收治理代币失败， %s \n",error)
-				return error
-			}
-			//写表
-			pbTxBuf, err := proto.Marshal(table)
-			if err != nil {
-				fmt.Printf("D__解析FrozenAssetsTable失败\n")
-				return err
-			}
-			batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
-
-			//解冻内容存储至节点信息表，在出块的时候通过交易id构建退款交易
-			keytalbe = "nodeinfo_" + "tdos_thaw_total_assets"
-			//查看节点是否存在申请解冻的
-			PbTxBuf, kvErr = t.sctx.Ledger.ConfirmedTable.Get([]byte(keytalbe))
-			NodeTable := &protos.NodeTable{}
-			if(kvErr != nil) {
-				fmt.Printf("D__第一次申请解冻\n", string(tx.TxInputs[0].FromAddr))
-			}else {
-				parserErr := proto.Unmarshal(PbTxBuf, NodeTable)
-				if parserErr != nil {
-					fmt.Printf("D__解冻治理代币时读NodeTable表错误\n")
-					return parserErr
-				}
-			}
-			if NodeTable.NodeDetails == nil {
-				NodeTable.NodeDetails = make(map[int64]*protos.NodeDetails)
-			}
-			NodeDetail := &protos.NodeDetail{
-				Address: string(tx.TxInputs[0].FromAddr),
-				Amount: amount.String(),
-			}
-			NodeTable.NodeDetails[NodeDetail.Height].NodeDetail = append(NodeTable.NodeDetails[NodeDetail.Height].NodeDetail,NodeDetail )
-			//写表
-			pbTxBuf, err = proto.Marshal(NodeTable)
-			if err != nil {
-				fmt.Printf("D__解析NodeTable失败\n")
-				return err
-			}
-			batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
-		}
-	}
+	//testa := "lalala" //测试，治理代币持有人
+	//testb := "hahaha" //测试，转给此人表示申请解冻
+	//
+	//for _ , data := range tx.TxOutputs {
+	//
+	//	//购买治理代币
+	//	if string(data.ToAddr) == testa {
+	//		KernMethod := new(governToken.KernMethod)
+	//		if len(tx.TxInputs) > 0 {
+	//			fakeCtx := mock.NewFakeKContext(NewNominateArgs(data.ToAddr,tx.TxInputs[0].FromAddr,data.Amount ), NewM())
+	//			 error := KernMethod.AddTokens(fakeCtx)
+	//			if error != nil {
+	//				fmt.Printf("D__购买治理代币失败， %s \n",error)
+	//				return error
+	//			}
+	//			//购买的交易id以及金额写入资产冻结表
+	//			keytalbe := "amount_" + string(tx.TxInputs[0].FromAddr)
+	//			//查看用户是否冻结过
+	//			PbTxBuf, kvErr := t.sctx.Ledger.ConfirmedTable.Get([]byte(keytalbe))
+	//			table := &protos.FrozenAssetsTable{}
+	//			if(kvErr != nil){
+	//				fmt.Printf("D__用户%s第一次冻结\n",string(tx.TxInputs[0].FromAddr))
+	//			}else {
+	//				parserErr := proto.Unmarshal(PbTxBuf, table)
+	//				if parserErr != nil {
+	//					fmt.Printf("D__购买治理代币时读FrozenAssetsTable表错误\n")
+	//					return parserErr
+	//				}
+	//			}
+	//			//拿取冻结的金额
+	//			tabledata := &protos.FrozenDetails{
+	//				Timestamp:        time.Now().UnixNano(),
+	//			}
+	//			if table.FrozenDetail == nil {
+	//				table.FrozenDetail = make(map[string]*protos.FrozenDetails)
+	//			}
+	//			tabledata.Amount = big.NewInt(0).SetBytes(data.Amount).String()
+	//			table.FrozenDetail[hex.EncodeToString(tx.Txid)] = tabledata
+	//			//开始写表
+	//			pbTxBuf, err := proto.Marshal(table)
+	//			if err != nil {
+	//				fmt.Printf("D__解析FrozenAssetsTable失败\n")
+	//				return err
+	//			}
+	//			batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
+	//
+	//		}else {
+	//			return errors.New("D__TxInputs 必须大于0 \n")
+	//		}
+	//
+	//	}
+	//
+	//	//出售治理代币
+	//	if string(data.ToAddr) == testb {
+	//
+	//		//解析desc数据
+	//		txDesc := &TxDesc{}
+	//		jsErr := json.Unmarshal(tx.Desc,txDesc)
+	//		if jsErr != nil {
+	//			fmt.Printf("D__解析desc错误 \n")
+	//			return jsErr
+	//		}
+	//		if txDesc.Args["txid"] == nil {
+	//			fmt.Printf("D__交易id为空 \n")
+	//			return errors.New("txid can not be null")
+	//		}
+	//		var txids []interface{}
+	//		switch txDesc.Args["txid"].(type) {
+	//		case []interface{}:
+	//			txids = txDesc.Args["txid"].([]interface{})
+	//		default:
+	//			return  errors.New("D__txid should be []interface{}")
+	//		}
+	//		if len(txids) > 100 {
+	//			return  errors.New("D__每次最多解冻一百条条数据")
+	//		}
+	//
+	//		//记录申请解冻金额
+	//		//申请解冻这儿，输入的交易一定是冻结表里面的，否则报错，所以先获取该用户冻结信息
+	//		keytalbe := "amount_" + string(tx.TxInputs[0].FromAddr)
+	//		//查看用户是否冻结过
+	//		PbTxBuf, kvErr := t.sctx.Ledger.ConfirmedTable.Get([]byte(keytalbe))
+	//		table := &protos.FrozenAssetsTable{}
+	//		if(kvErr != nil){
+	//			return  errors.New("D__请冻结资产再操作")
+	//		}else {
+	//			parserErr := proto.Unmarshal(PbTxBuf, table)
+	//			if parserErr != nil {
+	//				fmt.Printf("D__解冻治理代币时读FrozenAssetsTable表错误\n")
+	//				return parserErr
+	//			}
+	//		}
+	//		//解冻的总余额
+	//		amount := big.NewInt(0)
+	//		for _ , v := range txids {
+	//			value, ok := table.FrozenDetail[v.(string)]
+	//			if !ok{
+	//				fmt.Printf("D__此交易不是冻结id或不存在，id： %s \n",v.(string))
+	//				return errors.New("D__此交易不是冻结id")
+	//			}
+	//			tableValue ,_:= new(big.Int).SetString(value.Amount,10)
+	//			amount.Add(amount,tableValue)
+	//			////把当前冻结的放回到解冻
+	//			//tabledata := &pb.FrozenDetails{
+	//			//	Height : t.sctx.Ledger.GetMeta().TrunkHeight + 1 +20,
+	//			//	Amount: value.Amount,
+	//			//}
+	//			//删除冻结中的
+	//			delete(table.FrozenDetail,hex.EncodeToString(tx.Txid))
+	//			//if table.ThawDetail == nil {
+	//			//	table.ThawDetail =  make(map[string]*pb.FrozenDetails)
+	//			//}
+	//			//table.ThawDetail[v.(string)] = tabledata
+	//		}
+	//		KernMethod := new(governToken.KernMethod)
+	//		fakeCtx := mock.NewFakeKContext(NewNominateArgs(data.ToAddr,tx.TxInputs[0].FromAddr,data.Amount ), NewM())
+	//		error := KernMethod.CheckTokens(fakeCtx,amount)
+	//		if error != nil {
+	//			fmt.Printf("D__可撤回量不足， %s \n",error)
+	//			return error
+	//		}
+	//		//修改合约
+	//		fakeCtx = mock.NewFakeKContext(NewNominateArgs(tx.TxInputs[0].FromAddr,data.ToAddr,amount.Bytes() ), NewM())
+	//		error = KernMethod.SubTokens(fakeCtx)
+	//		//理论上不会报错
+	//		if error != nil {
+	//			fmt.Printf("D__回收治理代币失败， %s \n",error)
+	//			return error
+	//		}
+	//		//写表
+	//		pbTxBuf, err := proto.Marshal(table)
+	//		if err != nil {
+	//			fmt.Printf("D__解析FrozenAssetsTable失败\n")
+	//			return err
+	//		}
+	//		batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
+	//
+	//		//解冻内容存储至节点信息表，在出块的时候通过交易id构建退款交易
+	//		keytalbe = "nodeinfo_" + "tdos_thaw_total_assets"
+	//		//查看节点是否存在申请解冻的
+	//		PbTxBuf, kvErr = t.sctx.Ledger.ConfirmedTable.Get([]byte(keytalbe))
+	//		NodeTable := &protos.NodeTable{}
+	//		if(kvErr != nil) {
+	//			fmt.Printf("D__第一次申请解冻\n", string(tx.TxInputs[0].FromAddr))
+	//		}else {
+	//			parserErr := proto.Unmarshal(PbTxBuf, NodeTable)
+	//			if parserErr != nil {
+	//				fmt.Printf("D__解冻治理代币时读NodeTable表错误\n")
+	//				return parserErr
+	//			}
+	//		}
+	//		if NodeTable.NodeDetails == nil {
+	//			NodeTable.NodeDetails = make(map[int64]*protos.NodeDetails)
+	//		}
+	//		NodeDetail := &protos.NodeDetail{
+	//			Address: string(tx.TxInputs[0].FromAddr),
+	//			Amount: amount.String(),
+	//		}
+	//		NodeTable.NodeDetails[NodeDetail.Height].NodeDetail = append(NodeTable.NodeDetails[NodeDetail.Height].NodeDetail,NodeDetail )
+	//		//写表
+	//		pbTxBuf, err = proto.Marshal(NodeTable)
+	//		if err != nil {
+	//			fmt.Printf("D__解析NodeTable失败\n")
+	//			return err
+	//		}
+	//		batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
+	//	}
+	//}
 	return nil
 }
 
