@@ -30,12 +30,15 @@ func NewGovManager(ctx *GovCtx) (GovManager, error) {
 
 	t := NewKernContractMethod(ctx.BcName, newGovGas, predistribution)
 	register := ctx.Contract.GetKernRegistry()
-	register.RegisterKernMethod(utils.GovernTokenKernelContract, "Init", t.InitGovernTokens)
+	//register.RegisterKernMethod(utils.GovernTokenKernelContract, "Init", t.InitGovernTokens)
 	//register.RegisterKernMethod(utils.GovernTokenKernelContract, "Transfer", t.TransferGovernTokens) //屏蔽掉
 	register.RegisterKernMethod(utils.GovernTokenKernelContract, "Lock", t.LockGovernTokens)
 	register.RegisterKernMethod(utils.GovernTokenKernelContract, "UnLock", t.UnLockGovernTokens)
 	register.RegisterKernMethod(utils.GovernTokenKernelContract, "Query", t.QueryAccountGovernTokens)
 	register.RegisterKernMethod(utils.GovernTokenKernelContract, "TotalSupply", t.TotalSupply)
+	register.RegisterKernMethod(utils.GovernTokenKernelContract,"Buy",t.AddTokens)
+	register.RegisterKernMethod(utils.GovernTokenKernelContract,"Sell",t.SubTokens)
+
 
 	mg := &Manager{
 		Ctx: ctx,

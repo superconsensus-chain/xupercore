@@ -88,32 +88,37 @@ func (t *KernMethod) InitGovernTokens(ctx contract.KContext) (*contract.Response
 	}, nil
 }
 
-func (t *KernMethod) AddTokens(ctx contract.KContext) error {
+func (t *KernMethod) AddTokens(ctx contract.KContext) (*contract.Response, error) {
+	if ctx.ResourceLimit().XFee < t.NewGovResourceAmount/1000 {
+		return nil, fmt.Errorf("gas not enough, expect no less than %d", t.NewGovResourceAmount/1000)
+	}
+
 	args := ctx.Args()
 	//购买的用户
-	sender := args["from"]
+	sender := ctx.Initiator()
 	amountBuf := args["amount"]
-	if sender == nil || amountBuf == nil {
-		return fmt.Errorf(" sender is nil or amount is nil")
+	desc := args["desc"]
+	if sender == "" || amountBuf == nil || string(desc) != "buy"{
+		return nil,fmt.Errorf(" sender is nil or amount is nil or desc error")
 	}
 	amount := big.NewInt(0)
 	amount.SetBytes(amountBuf)
 	if amount.Cmp(big.NewInt(0)) == -1 {
-		return fmt.Errorf("BuyTokens gov tokens failed, parse amount error")
+		return nil,fmt.Errorf("BuyTokens gov tokens failed, parse amount error")
 	}
 	//设置购买的key
-	key :=  utils.MakeAccountBalanceKey(string(sender))
+	key :=  utils.MakeAccountBalanceKey(sender)
 	balance := utils.NewGovernTokenBalance()
 	//查找该用户是否购买
 	keyBuf, _ := ctx.Get(utils.GetGovernTokenBucket(), []byte(key))
 	if keyBuf == nil {
-		fmt.Printf("D__用户%s第一次购买\n",string(sender))
+		fmt.Printf("D__用户%s第一次购买\n",sender)
 		balance.TotalBalance = amount
 	}else {
 		err := json.Unmarshal(keyBuf,balance)
 		if err != nil {
 			fmt.Printf("D__购买代币解析异常\n")
-			return err
+			return nil,err
 		}
 		balance.TotalBalance.Add(balance.TotalBalance,amount)
 	}
@@ -121,13 +126,13 @@ func (t *KernMethod) AddTokens(ctx contract.KContext) error {
 	//写表
 	balanceBuf, err := json.Marshal(balance)
 	if err != nil {
-		fmt.Printf("D__解析投票表失败\n")
-		return err
+		fmt.Printf("D__解析代币表失败\n")
+		return nil,err
 	}
 	err = ctx.Put(utils.GetGovernTokenBucket(), []byte(key), balanceBuf)
 	if err != nil {
-		fmt.Printf("D__写投票表失败\n")
-		return err
+		fmt.Printf("D__写代币表失败\n")
+		return nil,err
 	}
 	//总资产增加
 	Totalkey := utils.MakeTotalSupplyKey()
@@ -137,7 +142,7 @@ func (t *KernMethod) AddTokens(ctx contract.KContext) error {
 		err := ctx.Put(utils.GetGovernTokenBucket(), []byte(Totalkey), []byte(amount.String()))
 		if err != nil {
 			fmt.Printf("D__第一次写总资产表失败\n")
-			return err
+			return nil,err
 		}
 	}else {
 		totalSupply := big.NewInt(0)
@@ -146,61 +151,71 @@ func (t *KernMethod) AddTokens(ctx contract.KContext) error {
 		err := ctx.Put(utils.GetGovernTokenBucket(), []byte(Totalkey), []byte(totalSupply.String()))
 		if err != nil {
 			fmt.Printf("D__写总资产表失败\n")
-			return err
+			return nil,err
 		}
 	}
-	return nil
+	return &contract.Response{
+		Status:  utils.StatusOK,
+		Message: "success",
+		Body:    nil,
+	}, nil
 }
 
-func (t *KernMethod) SubTokens(ctx contract.KContext) error {
+func (t *KernMethod) SubTokens(ctx contract.KContext) (*contract.Response, error) {
+
+	if ctx.ResourceLimit().XFee < t.NewGovResourceAmount/1000 {
+		return nil, fmt.Errorf("gas not enough, expect no less than %d", t.NewGovResourceAmount/1000)
+	}
+
 	args := ctx.Args()
 	//减少的用户
-	sender := args["from"]
+	sender := ctx.Initiator()
 	amountBuf := args["amount"]
-	if sender == nil || amountBuf == nil {
-		return fmt.Errorf(" sender is nil or amount is nil")
+	desc := args["desc"]
+	if sender == "" || amountBuf == nil || string(desc) != "sell"{
+		return nil,fmt.Errorf(" sender is nil or amount is nil or desc error")
 	}
 	amount := big.NewInt(0)
 	amount.SetBytes(amountBuf)
 	if amount.Cmp(big.NewInt(0)) == -1 {
-		return fmt.Errorf("BuyTokens gov tokens failed, parse amount error")
+		return nil,fmt.Errorf("BuyTokens gov tokens failed, parse amount error")
 	}
 
 	//设置购买的key
-	key :=  utils.MakeAccountBalanceKey(string(sender))
+	key :=  utils.MakeAccountBalanceKey(sender)
 	balance := utils.NewGovernTokenBalance()
 	//查找该用户之前是否购买
 	keyBuf, _ := ctx.Get(utils.GetGovernTokenBucket(), []byte(key))
 	if keyBuf == nil {
-		return fmt.Errorf("D__禁止未兑换解冻\n")
+		return nil,fmt.Errorf("D__禁止未兑换解冻\n")
 	}else {
 		err := json.Unmarshal(keyBuf,balance)
 		if err != nil {
-			fmt.Printf("D__购买代币解析异常\n")
-			return err
+			fmt.Printf("D__治理代币解析异常\n")
+			return nil,err
 		}
 		balance.TotalBalance.Sub(balance.TotalBalance,amount)
 		if balance.TotalBalance.Cmp(big.NewInt(0)) == -1 {
-			return fmt.Errorf("D__用户撤销量不足\n")
+			return nil,fmt.Errorf("D__用户撤销量不足\n")
 		}
 	}
 	//写表
 	balanceBuf, err := json.Marshal(balance)
 	if err != nil {
-		fmt.Printf("D__解析投票表失败\n")
-		return err
+		fmt.Printf("D__解析代币表失败\n")
+		return nil,err
 	}
 	err = ctx.Put(utils.GetGovernTokenBucket(), []byte(key), balanceBuf)
 	if err != nil {
-		fmt.Printf("D__写投票表失败\n")
-		return err
+		fmt.Printf("D__写代币表失败\n")
+		return nil,err
 	}
 
 	//总资产减少
 	Totalkey := utils.MakeTotalSupplyKey()
 	totalSupplyBuf, _ := ctx.Get(utils.GetGovernTokenBucket(), []byte(Totalkey))
 	if totalSupplyBuf != nil {
-		return fmt.Errorf("D__总资产不存在禁止解冻\n")
+		return nil,fmt.Errorf("D__总资产不存在禁止解冻\n")
 	}else {
 		totalSupply := big.NewInt(0)
 		totalSupply.SetString(string(totalSupplyBuf), 10)
@@ -208,13 +223,17 @@ func (t *KernMethod) SubTokens(ctx contract.KContext) error {
 		err := ctx.Put(utils.GetGovernTokenBucket(), []byte(Totalkey), []byte(totalSupply.String()))
 		if err != nil {
 			fmt.Printf("D__写总资产表失败\n")
-			return err
+			return nil,err
 		}
 		if totalSupply.Cmp(big.NewInt(0)) == -1{
-			return fmt.Errorf("D__系统撤销量不足\n")
+			return nil,fmt.Errorf("D__系统撤销量不足\n")
 		}
 	}
-	return nil
+	return &contract.Response{
+		Status:  utils.StatusOK,
+		Message: "success",
+		Body:    nil,
+	}, nil
 }
 
 func (t *KernMethod)CheckTokens(ctx contract.KContext,amount *big.Int) error {
