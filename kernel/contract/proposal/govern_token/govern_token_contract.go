@@ -154,6 +154,12 @@ func (t *KernMethod) AddTokens(ctx contract.KContext) (*contract.Response, error
 			return nil,err
 		}
 	}
+
+	delta := contract.Limits{
+		XFee: t.NewGovResourceAmount,
+	}
+	ctx.AddResourceUsed(delta)
+
 	return &contract.Response{
 		Status:  utils.StatusOK,
 		Message: "success",
@@ -229,6 +235,12 @@ func (t *KernMethod) SubTokens(ctx contract.KContext) (*contract.Response, error
 			return nil,fmt.Errorf("D__系统撤销量不足\n")
 		}
 	}
+
+	delta := contract.Limits{
+		XFee: t.NewGovResourceAmount,
+	}
+	ctx.AddResourceUsed(delta)
+
 	return &contract.Response{
 		Status:  utils.StatusOK,
 		Message: "success",
