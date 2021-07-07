@@ -102,9 +102,9 @@ func (t *KernMethod) AddTokens(ctx contract.KContext) (*contract.Response, error
 		return nil,fmt.Errorf(" sender is nil or amount is nil or desc error")
 	}
 	amount := big.NewInt(0)
-	amount.SetBytes(amountBuf)
-	if amount.Cmp(big.NewInt(0)) == -1 {
-		return nil,fmt.Errorf("BuyTokens gov tokens failed, parse amount error")
+	_, isAmount := amount.SetString(string(amountBuf), 10)
+	if !isAmount || amount.Cmp(big.NewInt(0)) == -1 {
+		return nil, fmt.Errorf("AddTokens failed, parse amount error")
 	}
 	//设置购买的key
 	key :=  utils.MakeAccountBalanceKey(sender)
@@ -182,9 +182,9 @@ func (t *KernMethod) SubTokens(ctx contract.KContext) (*contract.Response, error
 		return nil,fmt.Errorf(" sender is nil or amount is nil or desc error")
 	}
 	amount := big.NewInt(0)
-	amount.SetBytes(amountBuf)
-	if amount.Cmp(big.NewInt(0)) == -1 {
-		return nil,fmt.Errorf("BuyTokens gov tokens failed, parse amount error")
+	_, isAmount := amount.SetString(string(amountBuf), 10)
+	if !isAmount || amount.Cmp(big.NewInt(0)) == -1 {
+		return nil, fmt.Errorf("SubTokens failed, parse amount error")
 	}
 
 	//设置购买的key
@@ -220,7 +220,7 @@ func (t *KernMethod) SubTokens(ctx contract.KContext) (*contract.Response, error
 	//总资产减少
 	Totalkey := utils.MakeTotalSupplyKey()
 	totalSupplyBuf, _ := ctx.Get(utils.GetGovernTokenBucket(), []byte(Totalkey))
-	if totalSupplyBuf != nil {
+	if totalSupplyBuf == nil {
 		return nil,fmt.Errorf("D__总资产不存在禁止解冻\n")
 	}else {
 		totalSupply := big.NewInt(0)
@@ -359,9 +359,9 @@ func (t *KernMethod) LockGovernTokens(ctx contract.KContext) (*contract.Response
 	accountBuf := args["from"]
 	amountBuf := args["amount"]
 	lockTypeBuf := args["lock_type"]
-	to := args["to"]
-	if accountBuf == nil || amountBuf == nil || lockTypeBuf == nil || to == nil {
-		return nil, fmt.Errorf("lock gov tokens failed, account, amount , lock_type or to is nil")
+//	to := args["to"]
+	if accountBuf == nil || amountBuf == nil || lockTypeBuf == nil {
+		return nil, fmt.Errorf("lock gov tokens failed, account, amount , lock_type  is nil")
 	}
 
 	// 校验场景
@@ -390,30 +390,30 @@ func (t *KernMethod) LockGovernTokens(ctx contract.KContext) (*contract.Response
 	accountBalanceBuf, _ := json.Marshal(accountBalance)
 	accountKey := utils.MakeAccountBalanceKey(string(accountBuf))
 
-	//参数类型判断
-	ratio := args["ratio"]
-	//ratio不为空，提名候选人，为空表示普通投票
-	if ratio == nil {
-		amountRatio := big.NewInt(0)
-		amountRatio.SetString(string(ratio), 10)
-		if amountRatio.Int64() > 100 || amountRatio.Int64() < 0 {
-			return nil, fmt.Errorf("D__ratio参数范围取错。必须在0-100之间 ")
-		}
-		error := t.writeCandidateTable(ctx,string(to),amountRatio.Int64(),true)
-		if error != nil {
-			return nil, err
-		}
-	}else {
-		amountVote:= big.NewInt(0)
-		amountVote.SetString(string(amountBuf), 10)
-		if amountVote.Int64() < 0 {
-			return nil, fmt.Errorf("D__Vote 必须大于0 ")
-		}
-		error := t.writeVoteTable(ctx,string(accountBuf),string(to),amountVote,true)
-		if error != nil {
-			return nil, err
-		}
-	}
+	////参数类型判断
+	//ratio := args["ratio"]
+	////ratio不为空，提名候选人，为空表示普通投票
+	//if ratio == nil {
+	//	amountRatio := big.NewInt(0)
+	//	amountRatio.SetString(string(ratio), 10)
+	//	if amountRatio.Int64() > 100 || amountRatio.Int64() < 0 {
+	//		return nil, fmt.Errorf("D__ratio参数范围取错。必须在0-100之间 ")
+	//	}
+	//	error := t.writeCandidateTable(ctx,string(to),amountRatio.Int64(),true)
+	//	if error != nil {
+	//		return nil, err
+	//	}
+	//}else {
+	//	amountVote:= big.NewInt(0)
+	//	amountVote.SetString(string(amountBuf), 10)
+	//	if amountVote.Int64() < 0 {
+	//		return nil, fmt.Errorf("D__Vote 必须大于0 ")
+	//	}
+	//	error := t.writeVoteTable(ctx,string(accountBuf),string(to),amountVote,true)
+	//	if error != nil {
+	//		return nil, err
+	//	}
+	//}
 
 	err = ctx.Put(utils.GetGovernTokenBucket(), []byte(accountKey), accountBalanceBuf)
 	if err != nil {
@@ -441,7 +441,7 @@ func (t *KernMethod) UnLockGovernTokens(ctx contract.KContext) (*contract.Respon
 	accountBuf := args["from"]
 	amountBuf := args["amount"]
 	lockTypeBuf := args["lock_type"]
-	to := args["to"]
+	//to := args["to"]
 	if accountBuf == nil || amountBuf == nil || lockTypeBuf == nil {
 		return nil, fmt.Errorf("lock gov tokens failed, account, amount or lock_type is nil")
 	}
@@ -464,30 +464,30 @@ func (t *KernMethod) UnLockGovernTokens(ctx contract.KContext) (*contract.Respon
 	accountBalanceBuf, _ := json.Marshal(accountBalance)
 	accountKey := utils.MakeAccountBalanceKey(string(accountBuf))
 
-	//参数类型判断
-	ratio := args["ratio"]
-	//ratio不为空，提名候选人，为空表示普通投票
-	if ratio == nil {
-		amountRatio := big.NewInt(0)
-		amountRatio.SetString(string(ratio), 10)
-		if amountRatio.Int64() > 100 || amountRatio.Int64() < 0 {
-			return nil, fmt.Errorf("D__ratio参数范围取错。必须在0-100之间 ")
-		}
-		error := t.writeCandidateTable(ctx,string(to),amountRatio.Int64(),false)
-		if error != nil {
-			return nil, err
-		}
-	}else {
-		amountVote:= big.NewInt(0)
-		amountVote.SetString(string(amountBuf), 10)
-		if amountVote.Int64() < 0 {
-			return nil, fmt.Errorf("D__Vote 必须大于0 ")
-		}
-		error := t.writeVoteTable(ctx,string(accountBuf),string(to),amountVote,false)
-		if error != nil {
-			return nil, err
-		}
-	}
+	////参数类型判断
+	//ratio := args["ratio"]
+	////ratio不为空，提名候选人，为空表示普通投票
+	//if ratio == nil {
+	//	amountRatio := big.NewInt(0)
+	//	amountRatio.SetString(string(ratio), 10)
+	//	if amountRatio.Int64() > 100 || amountRatio.Int64() < 0 {
+	//		return nil, fmt.Errorf("D__ratio参数范围取错。必须在0-100之间 ")
+	//	}
+	//	error := t.writeCandidateTable(ctx,string(to),amountRatio.Int64(),false)
+	//	if error != nil {
+	//		return nil, err
+	//	}
+	//}else {
+	//	amountVote:= big.NewInt(0)
+	//	amountVote.SetString(string(amountBuf), 10)
+	//	if amountVote.Int64() < 0 {
+	//		return nil, fmt.Errorf("D__Vote 必须大于0 ")
+	//	}
+	//	error := t.writeVoteTable(ctx,string(accountBuf),string(to),amountVote,false)
+	//	if error != nil {
+	//		return nil, err
+	//	}
+	//}
 
 	err = ctx.Put(utils.GetGovernTokenBucket(), []byte(accountKey), accountBalanceBuf)
 	if err != nil {

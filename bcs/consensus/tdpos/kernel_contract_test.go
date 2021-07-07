@@ -30,7 +30,7 @@ func TestIsAuthAddress(t *testing.T) {
 
 func NewNominateArgs() map[string][]byte {
 	a := make(map[string][]byte)
-	a["candidate"] = []byte(`TeyyPLpp9L7QAcxHangtcHTu7HUZ6iydY`)
+	a["candidate"] = []byte(`akf7qunmeaqb51Wu418d6TyPKp4jdLdpV`)
 	a["amount"] = []byte("1")
 	a["height"] = []byte("6")
 	return a
@@ -59,8 +59,9 @@ func NewM() map[string]map[string][]byte {
 func NominateKey2() []byte {
 	n := NewNominateValue()
 	m2 := make(map[string]int64)
-	m2["SmJG3rH2ZzYQ9ojxhbRCPwFiE9y6pD1Co"] = 10
-	m2["TeyyPLpp9L7QAcxHangtcHTu7HUZ6iydY"] = 10
+	m2["SmJG3rH2ZzYQ9ojxhbRCPwFiE9y6pD1Co"] = 20
+	m2["TeyyPLpp9L7QAcxHangtcHTu7HUZ6iydY"] = 30
+	m2["akf7qunmeaqb51Wu418d6TyPKp4jdLdpV"] = 40
 	n["SmJG3rH2ZzYQ9ojxhbRCPwFiE9y6pD1Co"] = m2
 	m3 := make(map[string]int64)
 	m3["akf7qunmeaqb51Wu418d6TyPKp4jdLdpV"] = 5

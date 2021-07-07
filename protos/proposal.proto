@@ -78,5 +78,49 @@ message NodeTable{
     map<int64,NodeDetails> node_details =1;
 }
 
+//投票提名记录表
+message CandidateRatio{
+    //总票数
+    string tatal_vote = 1;
+    //分红比率
+    int64 Ratio = 2;
+    //投票的人
+    map<string,string> voting_user = 3;
+    //是否是提名人(取消此提名人后数据不能删除，通过标志位修改)
+    bool is_Nominate = 4;
+    //我投票的人
+    map<string,string> my_voting = 5;
+    //已使用的总票数
+    string used = 6;
+    //被投票的总票数
+    string be_voted_total = 7;
+    //提名候选人记录
+    map<string,NominateDetails> nominate_details = 8;
+}
 
+//缓存表，产块分红读取这个
+message CacheVoteCandidate{
+    //分红比率
+    int64 ratio = 1;
+    //投票的人
+    map<string , string> voting_user = 2;
+    //总票数
+    string total_vote = 3;
+}
+
+//纪录所有提名人，每轮开始的时候用于更新缓存表
+message AllCandidate{
+    map<string,string> candidate = 1;
+    //全网冻结资产
+    string freemonry = 2;
+    //冻结百分比
+    string percentage =3;
+}
+
+message NominateDetails {
+    //抵押的资产
+    string amount = 1;
+    //是否取消提名
+    bool isnominate = 2;
+}
 

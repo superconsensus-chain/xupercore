@@ -34,11 +34,11 @@ func (tp *tdposConsensus) runNominateCandidate(contractCtx contract.KContext) (*
 	if err != nil {
 		return common.NewContractErrResponse(common.StatusErr, err.Error()), err
 	}
-	//1.1.1 核查分红比的参数有效性
-	ratio , err := tp.checkRatio(contractCtx.Args())
-	if err != nil {
-		return common.NewContractErrResponse(common.StatusErr, err.Error()), err
-	}
+	////1.1.1 核查分红比的参数有效性
+	//_, err = tp.checkRatio(contractCtx.Args())
+	//if err != nil {
+	//	return common.NewContractErrResponse(common.StatusErr, err.Error()), err
+	//}
 	amountBytes := contractCtx.Args()["amount"]
 	amountStr := string(amountBytes)
 	amount, err := strconv.ParseInt(amountStr, 10, 64)
@@ -54,8 +54,8 @@ func (tp *tdposConsensus) runNominateCandidate(contractCtx contract.KContext) (*
 		"from":      []byte(contractCtx.Initiator()),
 		"amount":    []byte(fmt.Sprintf("%d", amount)),
 		"lock_type": []byte(utils.GovernTokenTypeTDPOS),
-		"ratio" : []byte(fmt.Sprintf("%d",ratio)),
-		"to": []byte(candidateName),
+	//	"ratio" : []byte(fmt.Sprintf("%d",ratio)),
+	//	"to": []byte(candidateName),
 	}
 	_, err = contractCtx.Call("xkernel", utils.GovernTokenKernelContract, "Lock", tokenArgs)
 	if err != nil {

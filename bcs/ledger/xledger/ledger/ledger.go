@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
 	"path/filepath"
 	"runtime"
 	"sync"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/def"
@@ -83,7 +85,7 @@ type Ledger struct {
 	blockCache     *cache.LRUCache // block cache, 加速QueryBlock
 	blkHeaderCache *cache.LRUCache // block header cache, 加速fetchBlock
 	cryptoClient   cryptoBase.CryptoClient
-	confirmBatch   kvdb.Batch //新增区块
+	ConfirmBatch   kvdb.Batch //新增区块
 }
 
 // ConfirmStatus block status
@@ -137,7 +139,7 @@ func newLedger(lctx *LedgerCtx, createIfMissing bool, genesisCfg []byte) (*Ledge
 	ledger.meta = &pb.LedgerMeta{}
 	ledger.blockCache = cache.NewLRUCache(BlockCacheSize)
 	ledger.blkHeaderCache = cache.NewLRUCache(BlockCacheSize)
-	ledger.confirmBatch = baseDB.NewBatch()
+	ledger.ConfirmBatch = baseDB.NewBatch()
 	metaBuf, metaErr := ledger.metaTable.Get([]byte(""))
 	emptyLedger := false
 	if metaErr != nil && def.NormalizedKVError(metaErr) == def.ErrKVNotFound && createIfMissing {
@@ -453,26 +455,20 @@ func (l *Ledger) handleFork(oldTip []byte, newTipPre []byte, nextHash []byte, ba
 func (l *Ledger)AssignRewards(address string,blockAward *big.Int) *big.Int {
 
 	award := big.NewInt(0)
-	//KernMethod := new(governToken.KernMethod)
-	//fakeCtx := mock.NewFakeKContext(NewNominateArgs(), NewM())
-	//ratData  := KernMethod.GetRewardRatio(fakeCtx,address)
-	//if ratData == 0 {
-	//	return award
-	//}
-	keytalbe := "cached_dividend_table"
-	//查看缓存表是否有
-	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(keytalbe))
+	//读缓存表
+	key := "cache_" + address
+	table := &protos.CacheVoteCandidate{}
+	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(key))
 	if kvErr != nil {
 		return award
 	}
-	table := &protos.ProposalRatio{}
 	parserErr := proto.Unmarshal(PbTxBuf, table)
-	if parserErr != nil {
-		fmt.Printf("D_异常错误，读缓存表分红失败\n")
+	if parserErr != nil{
+		fmt.Printf("D__校验分配奖励读UserReward表错误\n")
 		return award
 	}
-
-	award.Mul(blockAward,big.NewInt(table.UserRatio[address])).Div(award,big.NewInt(100))
+	ratData := table.Ratio
+	award.Mul(blockAward,big.NewInt(ratData)).Div(award,big.NewInt(100))
 	return award
 }
 
@@ -599,7 +595,7 @@ func (l *Ledger) ConfirmBlock(block *pb.InternalBlock, isRoot bool) ConfirmStatu
 	realTransactions := block.Transactions // 真正的交易转存到局部变量
 	block.Transactions = dummyTransactions // block表不保存transaction详情
 
-	batchWrite := l.confirmBatch
+	batchWrite := l.ConfirmBatch
 	batchWrite.Reset()
 	newMeta := proto.Clone(l.meta).(*pb.LedgerMeta)
 	splitHeight := newMeta.TrunkHeight
@@ -690,6 +686,47 @@ func (l *Ledger) ConfirmBlock(block *pb.InternalBlock, isRoot bool) ConfirmStatu
 	cbNum := 0
 	oldBlockCache := map[string]*pb.InternalBlock{}
 	for _, tx := range realTransactions {
+		//在这儿解析交易存表,调用新版的接口TxOutputs不会超过4
+		//理论上这儿坐过校验判断后，不会报错，目前还是写好报错码，以便调试
+		if len(tx.TxInputs) >0 &&len(tx.TxOutputs) < 4 && len(tx.ContractRequests) > 0 {
+			req := tx.ContractRequests[0]
+			tmpReq := &InvokeRequest{
+				ModuleName:   req.ModuleName,
+				ContractName: req.ContractName,
+				MethodName:   req.MethodName,
+				Args:         map[string]string{},
+			}
+			for argKey, argV := range req.Args {
+				tmpReq.Args[argKey] = string(argV)
+			}
+			if tmpReq.ModuleName == "xkernel" && tmpReq.ContractName == "$govern_token"{
+				//这里有buy和sell
+				switch tmpReq.MethodName {
+				case "Buy":
+					l.WriteFreezeTable(batchWrite,tmpReq.Args["amount"],string(tx.TxInputs[0].FromAddr),tx.Txid)
+				case "Sell":
+					l.WriteThawTable(batchWrite,string(tx.TxInputs[0].FromAddr),tx.Desc)
+				default:
+					fmt.Printf("D__解析交易存表时方法异常，异常方法名: %s \n",tmpReq.MethodName)
+				}
+			}
+			if tmpReq.ModuleName == "xkernel" && tmpReq.ContractName == "$tdpos"{
+				switch tmpReq.MethodName {
+				case "nominateCandidate":
+					l.WriteCandidateTable(batchWrite,string(tx.TxInputs[0].FromAddr),tmpReq.Args)
+				case "revokeNominate":
+					l.WriteReCandidateTable(batchWrite,string(tx.TxInputs[0].FromAddr),tmpReq.Args)
+				case "voteCandidate":
+					l.VoteCandidateTable(batchWrite,string(tx.TxInputs[0].FromAddr),tmpReq.Args)
+				case "revokeVote":
+					l.RevokeVote(batchWrite,string(tx.TxInputs[0].FromAddr),tmpReq.Args)
+				default:
+					fmt.Printf("D__解析tdpos交易存表时方法异常，异常方法名: %s \n",tmpReq.MethodName)
+				}
+			}
+		}
+
+
 		if tx.Coinbase {
 			cbNum = cbNum + 1
 		}
@@ -789,6 +826,498 @@ func (l *Ledger) ConfirmBlock(block *pb.InternalBlock, isRoot bool) ConfirmStatu
 	l.blockCache.Add(string(block.Blockid), block)
 	l.xlog.Debug("confirm block cost", "blkTimer", blkTimer.Print())
 	return confirmStatus
+}
+
+// TxDesc is the description to running a contract
+type TxDesc struct {
+	Args   map[string]interface{} `json:"args"`
+}
+//申请解冻
+func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error {
+	//解冻的总余额
+	amount := big.NewInt(0)
+	txDesc := &TxDesc{}
+	jsErr := json.Unmarshal(desc,txDesc)
+	if jsErr != nil {
+		fmt.Printf("D__确认区块时解析desc错误 \n")
+		return jsErr
+	}
+	var txids []interface{}
+	switch txDesc.Args["txid"].(type) {
+	case []interface{}:
+		txids = txDesc.Args["txid"].([]interface{})
+	default:
+		return  errors.New("D__txid should be []interface{}")
+	}
+	//记录申请解冻金额
+	//申请解冻这儿，输入的交易一定是冻结表里面的，否则报错，所以先获取该用户冻结信息
+	keytalbe := "amount_" + user
+	//查看用户是否冻结过
+	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(keytalbe))
+	table := &protos.FrozenAssetsTable{}
+	if(kvErr != nil){
+		fmt.Printf("D__确认区块时请冻结资产再操作\n")
+		return kvErr
+	}else {
+		parserErr := proto.Unmarshal(PbTxBuf, table)
+		if parserErr != nil {
+			fmt.Printf("D__确认区块时读FrozenAssetsTable表错误\n")
+			return parserErr
+		}
+	}
+	for _ , v := range txids {
+		value, ok := table.FrozenDetail[v.(string)]
+		if ok{
+			tableValue ,_:= new(big.Int).SetString(value.Amount,10)
+			amount.Add(amount,tableValue)
+			//把当前冻结的放回到解冻
+			tabledata := &protos.FrozenDetails{
+				Height : l.GetMeta().TrunkHeight + 1 +20,
+				Amount: value.Amount,
+			}
+			delete(table.FrozenDetail,v.(string))
+			table.ThawDetail[v.(string)] = tabledata
+		}
+	}
+	pbTxBuf, err := proto.Marshal(table)
+	if err != nil {
+		fmt.Printf("D__确认区块时解析FrozenAssetsTable失败\n")
+		return err
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
+
+	//解冻内容存储至节点信息表，在出块的时候通过交易id构建退款交易
+	keytalbe = "nodeinfo_" + "tdos_thaw_total_assets"
+	//查看节点是否存在申请解冻的
+	PbTxBuf, kvErr = l.ConfirmedTable.Get([]byte(keytalbe))
+	NodeTable := &protos.NodeTable{}
+	if(kvErr != nil) {
+		fmt.Printf("D__第一次申请解冻\n", user)
+	}else {
+		parserErr := proto.Unmarshal(PbTxBuf, NodeTable)
+		if parserErr != nil {
+			fmt.Printf("D__解冻治理代币时读NodeTable表错误\n")
+			return parserErr
+		}
+	}
+	if NodeTable.NodeDetails == nil {
+		NodeTable.NodeDetails = make(map[int64]*protos.NodeDetails)
+	}
+	NodeDetail := &protos.NodeDetail{
+		Address: user,
+		Amount: amount.String(),
+		Height : l.GetMeta().TrunkHeight + 1 +20,
+
+	}
+	NodeTable.NodeDetails[NodeDetail.Height].NodeDetail = append(NodeTable.NodeDetails[NodeDetail.Height].NodeDetail,NodeDetail )
+	//写表
+	pbTxBuf, err = proto.Marshal(NodeTable)
+	if err != nil {
+		fmt.Printf("D__解析NodeTable失败\n")
+		return err
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
+
+	//解冻后用户提案表治理代币减少
+	keytalbe = "ballot_" + user
+	PbTxBuf, kvErr = l.ConfirmedTable.Get([]byte(keytalbe))
+	CandidateTable := &protos.CandidateRatio{}
+	if(kvErr != nil){
+		fmt.Printf("D__用户未投票\n",user)
+		return kvErr
+	}
+	parserErr := proto.Unmarshal(PbTxBuf, CandidateTable)
+	if parserErr != nil {
+		fmt.Printf("D__解冻治理代币时读CandidateRatio表错误\n")
+		return parserErr
+	}
+	oldAmount := big.NewInt(0)
+	oldAmount.SetString(CandidateTable.TatalVote,10)
+	CandidateTable.TatalVote = oldAmount.Sub(oldAmount,amount).String()
+
+	//开始写治理投票表
+	pbTxBuf, err = proto.Marshal(CandidateTable)
+	if err != nil {
+		fmt.Printf("D__购买治理代币时解析CandidateTable失败\n")
+		return err
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
+
+	fmt.Printf("D__申请冻结表执行完毕 \n")
+	return nil
+}
+
+//读治理代币表
+func (l *Ledger) ReadBallotTable(user string ,table *protos.CandidateRatio )(error){
+	keytable := "ballot_" + user
+	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(keytable))
+	if(kvErr != nil) {
+		return errors.New("D__读取UserBallot异常\n")
+	}
+	parserErr := proto.Unmarshal(PbTxBuf, table)
+	if parserErr != nil  {
+		return errors.New("D__读UserBallotTable表错误\n")
+	}
+	return nil
+}
+
+//撤销投票写表
+func (l *Ledger) RevokeVote(batch kvdb.Batch,user string,Args map[string]string) error {
+	CandidateTable := &protos.CandidateRatio{}
+	error := l.ReadBallotTable(user,CandidateTable)
+	if error != nil {
+		return error
+	}
+	//判断票数，获取参数
+	candidate := Args["candidate"]
+	amount := Args["amount"]
+	//撤销的投票数
+	ballots := big.NewInt(0)
+	ballots.SetString(amount,10)
+	//此用户投票的那个账户投票数减少
+	value , ok := CandidateTable.MyVoting[candidate]
+	if ok {
+		NewAmount := big.NewInt(0)
+		NewAmount.SetString(value,10)
+		value = NewAmount.Sub(NewAmount,ballots).String()
+	}
+	//撤销投票后，已使用的投票数减少
+	TotalAmount := big.NewInt(0)
+	TotalAmount.SetString(CandidateTable.Used,10)
+	CandidateTable.Used = TotalAmount.Sub(TotalAmount,ballots).String()
+	//写表
+	pbTxBuf, err := proto.Marshal(CandidateTable)
+	if err != nil {
+		return errors.New("D__解析UserBallotTable失败\n")
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + user...), pbTxBuf)
+
+	//读撤销投票的用户表,修改被投票的内容
+	BeCandidateTable := &protos.CandidateRatio{}
+	error = l.ReadBallotTable(user,BeCandidateTable)
+	if error != nil {
+		return error
+	}
+	//查找
+	value , ok = BeCandidateTable.VotingUser[user]
+	if ok {
+		oldAmount := big.NewInt(0)
+		oldAmount.SetString(value,10)
+		value = oldAmount.Sub(oldAmount,ballots).String()
+	}
+	//被投票的总数也减少
+	BeAmount := big.NewInt(0)
+	BeAmount.SetString(BeCandidateTable.BeVotedTotal,10)
+	BeCandidateTable.BeVotedTotal = BeAmount.Sub(BeAmount,ballots).String()
+	//写表
+	pbTxBuf , err =  proto.Marshal(BeCandidateTable)
+	if err != nil {
+		return errors.New("D__投票写表解析BeCandidateTable失败\n")
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + candidate...), pbTxBuf)
+	return nil
+}
+
+//投票写表
+func (l *Ledger) VoteCandidateTable(batch kvdb.Batch,user string,Args map[string]string) error {
+	CandidateTable := &protos.CandidateRatio{}
+	error := l.ReadBallotTable(user,CandidateTable)
+	if error != nil {
+		return error
+	}
+	//判断票数，获取参数
+	candidate := Args["candidate"]
+	amount := Args["amount"]
+
+	//判断票数，这儿不处理，参数校验那儿完成
+	//如果之前投了此人，更新票数
+	newAmount := big.NewInt(0)
+	newAmount.SetString(amount,10)
+	value , ok := CandidateTable.MyVoting[candidate]
+	if ok {
+		oldAmount := big.NewInt(0)
+		oldAmount.SetString(value,10)
+		value = oldAmount.Add(oldAmount,newAmount).String()
+	}else {
+		if CandidateTable.MyVoting == nil {
+			CandidateTable.MyVoting = make(map[string]string)
+		}
+		CandidateTable.MyVoting[candidate] = amount
+	}
+	//已使用的投票数增加
+	tableAmount := big.NewInt(0)
+	tableAmount.SetString(CandidateTable.Used,10)
+	CandidateTable.Used = tableAmount.Add(tableAmount,tableAmount).String()
+	//写表
+	pbTxBuf, err := proto.Marshal(CandidateTable)
+	if err != nil {
+		return errors.New("D__投票写表解析CandidateRatio失败\n")
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + user...), pbTxBuf)
+
+	//被投的人的投票提案表更新被投票的消息
+	BeCandidateTable := &protos.CandidateRatio{}
+	error = l.ReadBallotTable(user,BeCandidateTable)
+	if error != nil {
+		return error
+	}
+	//查找
+	value , ok = BeCandidateTable.VotingUser[user]
+	if ok {
+		oldAmount := big.NewInt(0)
+		oldAmount.SetString(value,10)
+		value = oldAmount.Add(oldAmount,newAmount).String()
+	}else {
+		if BeCandidateTable.MyVoting == nil {
+			BeCandidateTable.MyVoting = make(map[string]string)
+		}
+		BeCandidateTable.MyVoting[candidate] = amount
+	}
+	//被投票的总数也增加
+	BeAmount := big.NewInt(0)
+	BeAmount.SetString(BeCandidateTable.BeVotedTotal,10)
+	BeCandidateTable.BeVotedTotal = BeAmount.Add(BeAmount,newAmount).String()
+	//写表
+	pbTxBuf , err =  proto.Marshal(BeCandidateTable)
+	if err != nil {
+		return errors.New("D__投票写表解析BeCandidateTable失败\n")
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + candidate...), pbTxBuf)
+
+	return nil
+}
+
+//撤销提案写表
+func (l *Ledger) WriteReCandidateTable (batch kvdb.Batch,user string,Args map[string]string) error {
+	amount := big.NewInt(0)
+	//参数获取，取消的提名人
+	candidate := Args["candidate"]
+	//取消提名的人治理代币消耗减少
+	CandidateTable := &protos.CandidateRatio{}
+	//取消提名成功后，候选人信息删除
+	error := l.ReadBallotTable(user,CandidateTable)
+	if error != nil {
+		return error
+	}
+	//获取取消提名人之前抵押的
+	if CandidateTable.NominateDetails == nil {
+		return  errors.New("D__撤销提案内容内容错误\n")
+	}
+	value , ok := CandidateTable.NominateDetails[candidate]
+	if ok{
+		amount.SetString(value.Amount,10)
+	}else {
+		return  errors.New("D__无法取消不是自己提名的用户\n")
+	}
+	oldAmount := big.NewInt(0)
+	oldAmount.SetString(CandidateTable.Used,10)
+	CandidateTable.Used = oldAmount.Sub(oldAmount,amount).String()
+	//删除此次记录
+	delete( CandidateTable.NominateDetails,candidate)
+	//写表
+	pbTxBuf, err := proto.Marshal(CandidateTable)
+	if err != nil {
+		fmt.Printf("D__取消提案时解析CandidateTable失败\n")
+		return err
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + user...), pbTxBuf)
+
+	//被修改提名者信息
+	beCandidateTable := &protos.CandidateRatio{}
+	error = l.ReadBallotTable(candidate,beCandidateTable)
+	if error != nil {
+		return error
+	}
+	beCandidateTable.Ratio = 0
+	beCandidateTable.Is_Nominate = false
+	//写表
+	pbTxBuf, err = proto.Marshal(beCandidateTable)
+	if err != nil {
+		fmt.Printf("D__取消提案时解析被修改提名者信息CandidateTable失败\n")
+		return err
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + candidate...), pbTxBuf)
+	//所有提名表那删除这次提名人
+	toTable := "tdos_freezes_total_assets"
+	freetable := &protos.AllCandidate{}
+	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(toTable))
+	if kvErr == nil {
+		parserErr := proto.Unmarshal(PbTxBuf, freetable)
+		if parserErr != nil {
+			fmt.Printf("D__取消提案时解析读AllCandidate表错误\n")
+			return parserErr
+		}
+	}
+	delete(freetable.Candidate,candidate)
+	pbTxBuf, err = proto.Marshal(freetable)
+	if err != nil {
+		return errors.New("D__取消提案时解析AllCandidate失败\n")
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), toTable...), pbTxBuf)
+
+	return nil
+}
+
+//提案写表
+func (l *Ledger) WriteCandidateTable (batch kvdb.Batch,user string,Args map[string]string) error {
+	//参数获取，被提名人
+	candidate := Args["candidate"]
+	//参数获取，抵押的代币数
+	amount := Args["amount"]
+	//分红比
+	ratio := Args["ratio"]
+
+	//提名的人治理代币消耗增加
+	CandidateTable := &protos.CandidateRatio{}
+	//提名成功后，候选人信息加在这个里面
+	nominateTable := &protos.NominateDetails{}
+	error := l.ReadBallotTable(user,CandidateTable)
+	if error != nil {
+		return error
+	}
+	if CandidateTable.Used == ""{
+		fmt.Printf("D__用户%s第一次消耗治理代币\n",user)
+		CandidateTable.Used = "0"
+	}
+	newAmout := big.NewInt(0)
+	newAmout.SetString(amount,10)
+	oldAmount := big.NewInt(0)
+	oldAmount.SetString(CandidateTable.Used,10)
+	CandidateTable.Used = oldAmount.Add(oldAmount,newAmout).String()
+	nominateTable.Amount = amount
+	if CandidateTable.NominateDetails == nil {
+		CandidateTable.NominateDetails = make(map[string]*protos.NominateDetails)
+	}
+	CandidateTable.NominateDetails[candidate] = nominateTable
+
+	//写表
+	pbTxBuf, err := proto.Marshal(CandidateTable)
+	if err != nil {
+		fmt.Printf("D__提案时解析CandidateTable失败\n")
+		return err
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + user...), pbTxBuf)
+
+	//走到这儿，写被提名人的表
+	ratioAmount := big.NewInt(0)
+	ratioAmount.SetString(ratio,10)
+	keytalbe := "ballot_" + candidate
+	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(keytalbe))
+	beCandidateTable := &protos.CandidateRatio{}
+	if(kvErr != nil){
+		fmt.Printf("D__第一次提名此用户%s \n",candidate)
+	}else {
+		parserErr := proto.Unmarshal(PbTxBuf, beCandidateTable)
+		if parserErr != nil {
+			fmt.Printf("D__提案时解析读CandidateRatio表错误\n")
+			return parserErr
+		}
+	}
+	beCandidateTable.Is_Nominate = true
+	beCandidateTable.Ratio = ratioAmount.Int64()
+	//写表
+	pbTxBuf, err = proto.Marshal(beCandidateTable)
+	if err != nil {
+		fmt.Printf("D__提案时解析CandidateTable失败\n")
+		return err
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + candidate...), pbTxBuf)
+
+	//在这儿记录一下所有提名人
+	toTable := "tdos_freezes_total_assets"
+	freetable := &protos.AllCandidate{}
+	PbTxBuf, kvErr = l.ConfirmedTable.Get([]byte(toTable))
+	if kvErr == nil {
+		parserErr := proto.Unmarshal(PbTxBuf, freetable)
+		if parserErr != nil {
+			fmt.Printf("D__读UtxoMetaExplorer表错误\n")
+			return parserErr
+		}
+	}else {
+		fmt.Printf("D__用户%s是第一个提案人 \n",candidate)
+	}
+	if freetable.Candidate == nil {
+		freetable.Candidate = make(map[string]string)
+		freetable.Candidate[candidate] = candidate
+	}else {
+		freetable.Candidate[candidate] = candidate
+	}
+
+	pbTxBuf, err = proto.Marshal(freetable)
+	if err != nil {
+		return errors.New("D__解析AllCandidate失败\n")
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), toTable...), pbTxBuf)
+	return nil
+}
+
+//写入冻结表
+func (l *Ledger)WriteFreezeTable(batch kvdb.Batch,amount string,user string,txid []byte) error {
+	keytalbe := "amount_" + user
+	//查看用户是否冻结过
+	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(keytalbe))
+	table := &protos.FrozenAssetsTable{}
+	if(kvErr != nil){
+		fmt.Printf("D__用户%s第一次冻结\n",string(user))
+		table.Total = "0"
+	}else {
+		parserErr := proto.Unmarshal(PbTxBuf, table)
+		if parserErr != nil {
+			fmt.Printf("D__购买治理代币时读FrozenAssetsTable表错误\n")
+			return parserErr
+		}
+	}
+	//拿取冻结的金额
+	tabledata := &protos.FrozenDetails{
+		Timestamp:        time.Now().UnixNano(),
+	}
+	if table.FrozenDetail == nil {
+		table.FrozenDetail = make(map[string]*protos.FrozenDetails)
+	}
+	newAmount := big.NewInt(0)
+	_, isAmount := newAmount.SetString(amount, 10)
+	oldAmount := big.NewInt(0)
+	oldAmount.SetString(table.Total,10)
+	if !isAmount || newAmount.Cmp(big.NewInt(0)) == -1 {
+		fmt.Printf("D__购买治理代币时解析amount失败\n")
+	}
+	tabledata.Amount = newAmount.String()
+	table.FrozenDetail[hex.EncodeToString(txid)] = tabledata
+	table.Total = oldAmount.Add(oldAmount,newAmount).String()
+	//开始写表
+	pbTxBuf, err := proto.Marshal(table)
+	if err != nil {
+		fmt.Printf("D__购买治理代币时解析FrozenAssetsTable失败\n")
+		return err
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
+
+	//用户提案表治理代币增加
+	keytalbe = "ballot_" + user
+	//查看用户是否之前有过
+	PbTxBuf, kvErr = l.ConfirmedTable.Get([]byte(keytalbe))
+	CandidateTable := &protos.CandidateRatio{}
+	if(kvErr != nil){
+		fmt.Printf("D__用户%s第一次增加治理代币\n",user)
+		CandidateTable.TatalVote = "0"
+	}else {
+		parserErr := proto.Unmarshal(PbTxBuf, CandidateTable)
+		if parserErr != nil {
+			fmt.Printf("D__购买治理代币时读CandidateRatio表错误\n")
+			return parserErr
+		}
+		oldAmount := big.NewInt(0)
+		oldAmount.SetString(CandidateTable.TatalVote,10)
+		CandidateTable.TatalVote = oldAmount.Add(oldAmount,newAmount).String()
+	}
+	//开始写治理投票表
+	pbTxBuf, err = proto.Marshal(CandidateTable)
+	if err != nil {
+		fmt.Printf("D__购买治理代币时解析CandidateTable失败\n")
+		return err
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
+	return nil
 }
 
 // ExistBlock check if a block exists in the ledger

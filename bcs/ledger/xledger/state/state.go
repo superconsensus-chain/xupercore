@@ -4,6 +4,7 @@ package state
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/state/utxo/txhash"
@@ -770,8 +771,8 @@ func (t *State) doTxSync(tx *pb.Transaction) error {
 		t.log.Info("doTxInternal failed, when DoTx", "doErr", doErr)
 		return doErr
 	}
-	//在这儿检验交易，买代币或者是解冻
-	error := t.checkTxState(tx,batch)
+	//在这儿检验购买治理代币交易
+	error := t.checkTxState(tx)
 	if error != nil {
 		return error
 	}
@@ -790,9 +791,99 @@ func (t *State) doTxSync(tx *pb.Transaction) error {
 	return nil
 }
 
-func (t *State) checkTxState(tx *pb.Transaction,batch kvdb.Batch)(error){
+// InvokeRequest define genesis reserved_contracts configure
+type InvokeRequest struct {
+	ModuleName   string            `json:"module_name" mapstructure:"module_name"`
+	ContractName string            `json:"contract_name" mapstructure:"contract_name"`
+	MethodName   string            `json:"method_name" mapstructure:"method_name"`
+	Args         map[string]string `json:"args" mapstructure:"args"`
+}
+
+func (t *State) checkTxState(tx *pb.Transaction) error {
+
+	//预执行部分
+	if len(tx.TxInputs) >0 &&len(tx.TxOutputs) < 4 && len(tx.ContractRequests) > 0 {
+		req := tx.ContractRequests[0]
+		tmpReq := &InvokeRequest{
+			ModuleName:   req.ModuleName,
+			ContractName: req.ContractName,
+			MethodName:   req.MethodName,
+			Args:         map[string]string{},
+		}
+		for argKey, argV := range req.Args {
+			tmpReq.Args[argKey] = string(argV)
+		}
+		if tmpReq.ModuleName == "xkernel" && tmpReq.ContractName == "$govern_token"{
+			switch tmpReq.MethodName {
+			case "Buy":
+				return t.checkBuy(tx,tmpReq.Args)
+			case "Sell":
+				return t.checkSell(tx,tmpReq.Args)
+			}
+		}
+		if tmpReq.ModuleName == "xkernel" && tmpReq.ContractName == "$tdpos"{
+			switch tmpReq.MethodName {
+			case "nominateCandidate":
+				return t.checkNominateCandidate(tmpReq.Args)
+			case "revokeNominate" :
+				return t.checkRevokeNominate(string(tx.TxInputs[0].FromAddr),tmpReq.Args)
+			}
+		}
+	}
 
 	//testa := "lalala" //测试，治理代币持有人
+
+	//在这儿判断前端购买的amont是否是对的上的，防止客户端构造假的金额
+	//增加治理代币的量应该等于描述量
+	//for _ , data := range tx.TxOutputs{
+	//	if string(data.ToAddr) == testa {
+	//		if len(tx.TxInputs) > 0 {
+	//			txDesc := &TxDesc{}
+	//			jsErr := json.Unmarshal(tx.Desc,txDesc)
+	//			if jsErr != nil {
+	//				fmt.Printf("D__解析desc错误 \n")
+	//				return jsErr
+	//			}
+	//			//描述中加了买才判断
+	//			if txDesc.Args["buy"] != nil {
+	//				buy , ok := txDesc.Args["buy"].(string)
+	//				if !ok {
+	//					return errors.New("D__candidates should be string ")
+	//				}
+	//				if buy == "buy"{
+	//					if txDesc.Args["amount"] == nil{
+	//						return errors.New("D__desc文件中amount不能为空 必须大于0 \n")
+	//					}
+	//					amount , ok := txDesc.Args["amount"].(string)
+	//					if !ok {
+	//						return errors.New("D__camount should be string")
+	//					}
+	//
+	//					oldOutput := big.NewInt(0)
+	//					_, isAmount := oldOutput.SetString(amount, 10)
+	//					if !isAmount || oldOutput.Cmp(big.NewInt(0)) == -1 {
+	//						return errors.New("D__解析amount错误\n")
+	//					}
+	//
+	//					ChainAmount := big.NewInt(0)
+	//					ChainAmount.SetBytes(data.Amount)
+	//					if ChainAmount.Cmp(oldOutput) != 0 {
+	//						fmt.Printf("D__链上收到转账数据: %d \n",ChainAmount.Int64())
+	//						fmt.Printf("D__desc描述的数据: %d \n",oldOutput.Int64())
+	//						return errors.New("D__desc中充值代币数量于实际转账不符\n")
+	//
+	//					}
+	//
+	//				}
+	//
+	//			}
+	//		}else {
+	//			return errors.New("D__TxInputs 必须大于0 \n")
+	//		}
+	//	}
+	//}
+
+
 	//testb := "hahaha" //测试，转给此人表示申请解冻
 	//
 	//for _ , data := range tx.TxOutputs {
@@ -963,7 +1054,143 @@ func (t *State) checkTxState(tx *pb.Transaction,batch kvdb.Batch)(error){
 	return nil
 }
 
-//反转转账(目前是凭空产生的，这笔产生的资源不加入系统的总资源)
+func (t * State) checkRevokeNominate(user string,Args map[string]string) error {
+	//参数获取，取消的提名人
+	candidate := Args["candidate"]
+	//参数获取，撤销的代币数
+	amount := Args["amount"]
+	//参数校验
+	if candidate == "" || amount == ""{
+		return  errors.New("D__撤销候选人amount和candidate参数不能为空\n")
+	}
+	//读取取消提案的用户
+	keytalbe := "ballot_" + user
+	PbTxBuf, kvErr := t.sctx.Ledger.ConfirmedTable.Get([]byte(keytalbe))
+	if kvErr != nil {
+		return  errors.New("D__当前用户无法撤销提案\n")
+	}
+	CandidateTable := &protos.CandidateRatio{}
+	parserErr := proto.Unmarshal(PbTxBuf, CandidateTable)
+	if parserErr != nil {
+		fmt.Printf("D__取消提案时解析读CandidateRatio表错误\n")
+		return parserErr
+	}
+	value , ok := CandidateTable.NominateDetails[candidate]
+	if !ok {
+		return  errors.New("D__未提名\n")
+	}
+	if value.Amount != amount {
+		fmt.Printf("D__真实撤销量:%s,实际撤销量:%s\n",value.Amount,amount)
+		return errors.New("D__取消提名撤销量不匹配\n")
+	}
+
+	return nil
+}
+
+func (t *State) checkNominateCandidate(Args map[string]string ) error {
+	//参数获取，抵押的代币数
+	amount := Args["amount"]
+	//分红比
+	ratio := Args["ratio"]
+	//参数校验
+	if amount == "" || ratio == "" {
+		return  errors.New("D__提名候选人amount和ratio参数不能为空\n")
+	}
+	newAmount := big.NewInt(0)
+	_ , error := newAmount.SetString(amount,10)
+	if error == false {
+		return  errors.New("D__提名候选人amount参数内容有误\n")
+	}
+	newRatio := big.NewInt(0)
+	_ , error = newRatio.SetString(ratio,10)
+	if error == false {
+		return  errors.New("D__提名候选人ratio参数内容有误\n")
+	}
+	if newRatio.Int64() < 0 || newRatio.Int64() > 100 {
+		return  errors.New("D__ratio参数取值必须在0-100之间\n")
+	}
+	if newAmount.Int64() < 1000000 {
+		return  errors.New("D__取名候选人抵押数量不得低于1000000\n")
+	}
+	return nil
+}
+
+func (t *State)checkSell(tx *pb.Transaction,args map[string]string) error {
+	if len(args["amount"]) == 0 {
+		return errors.New("D__出售治理代币校验amount不能为空\n")
+	}
+	cliAmount := big.NewInt(0)
+	_,error := cliAmount.SetString(args["amount"],10)
+	if error == false {
+		return errors.New("D__出售治理代币amount类型错误（客户端请传string类型）\n")
+	}
+	amount := big.NewInt(0)
+	txDesc := &TxDesc{}
+	jsErr := json.Unmarshal(tx.Desc,txDesc)
+	if jsErr != nil {
+		fmt.Printf("D__预执行时出售治理代币解析desc错误 \n")
+		return jsErr
+	}
+	var txids []interface{}
+	switch txDesc.Args["txid"].(type) {
+	case []interface{}:
+		txids = txDesc.Args["txid"].([]interface{})
+	default:
+		return  errors.New("D__txid should be []interface{}")
+	}
+
+	//申请解冻这儿，输入的交易一定是冻结表里面的，否则报错，所以先获取该用户冻结信息
+	keytalbe := "amount_" + string(tx.TxInputs[0].FromAddr)
+	//查看用户是否冻结过
+	PbTxBuf, kvErr := t.sctx.Ledger.ConfirmedTable.Get([]byte(keytalbe))
+	table := &protos.FrozenAssetsTable{}
+	if(kvErr != nil){
+		return errors.New("D__确认区块时请冻结资产再操作\n")
+	}
+	parserErr := proto.Unmarshal(PbTxBuf, table)
+	if parserErr != nil {
+		return errors.New("D__预执行时读FrozenAssetsTable表错误\n")
+
+	}
+	for _ , v := range txids {
+		value, ok := table.FrozenDetail[v.(string)]
+		if ok{
+			tableValue ,_:= new(big.Int).SetString(value.Amount,10)
+			amount.Add(amount,tableValue)
+		}else {
+			return errors.New("D__预执行时交易id含有错误id \n")
+		}
+	}
+	if cliAmount.Cmp(amount) != 0 {
+		fmt.Printf("D__出售治理代币amount和校验的量数据不同，出售量: %d ,校验量: %d \n",amount.Int64(),cliAmount.Int64())
+		return errors.New("D__出售治理代币amount和校验的量数据不同\n")
+	}
+	return nil
+}
+
+func (t *State)checkBuy(tx *pb.Transaction ,args map[string]string) error {
+	if len(args["amount"]) == 0 {
+		return errors.New("D__购买治理代币amount不能为空\n")
+	}
+	chainAmount := big.NewInt(0)
+	for _ , data := range tx.TxOutputs{
+		if string(data.ToAddr) == "testa" {
+			chainAmount.SetBytes(data.Amount)
+		}
+	}
+	cliAmount := big.NewInt(0)
+	_,error := cliAmount.SetString(args["amount"],10)
+	if error == false {
+		return errors.New("D__购买治理代币amount类型错误（客户端请传string类型）\n")
+	}
+	if cliAmount.Cmp(chainAmount) != 0 || cliAmount.Cmp(big.NewInt(0)) == -1 {
+		fmt.Printf("D__购买治理代币amount和转账的量数据不同，购买量: %d ,转账量: %d \n",cliAmount.Int64(),chainAmount.Int64())
+		return errors.New("D__购买治理代币amount和转账的量数据不同\n")
+	}
+
+	return nil
+}
+//(目前是凭空产生的，这笔产生的资源不加入系统的总资源)
 func (t *State) ReverseTx(FromAddr string, batch kvdb.Batch,Amount string) (*pb.Transaction,error) {
 	// Users predefined user
 	//重新构成交易列表

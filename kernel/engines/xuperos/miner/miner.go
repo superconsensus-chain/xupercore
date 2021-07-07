@@ -138,7 +138,8 @@ func (t *Miner) Start() {
 		//当 isMiner=true isSync=true时，为新的一个周期
 		flag := false
 		if isMiner == true && isSync == true{
-			fmt.Printf("D__开始新的一个周期")
+			fmt.Printf("D__开始新的一个周期,刷新缓存表")
+			t.UpdateCacheTable()
 			flag = true
 		}
 
@@ -166,6 +167,65 @@ func (t *Miner) Start() {
 
 	t.log.Trace("miner exited", "ledgerTipHeight", ledgerTipHeight,
 		"ledgerTipId", utils.F(ledgerTipId), "stateTipId", utils.F(stateTipId))
+}
+
+//刷新缓存表
+func (t *Miner)UpdateCacheTable(){
+	batchWrite := t.ctx.Ledger.ConfirmBatch
+	batchWrite.Reset()
+	//获取当前全部候选人，将候选人投票分红信息写入
+	toTable := "tdos_freezes_total_assets"
+	freetable := &protos.AllCandidate{}
+	PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(toTable))
+	if kvErr == nil {
+		parserErr := proto.Unmarshal(PbTxBuf, freetable)
+		if parserErr != nil {
+			fmt.Printf("D__读UtxoMetaExplorer表错误\n")
+			return
+		}
+	}else {
+		return
+	}
+	for _ , data := range freetable.Candidate{
+		//读用户投票表
+		CandidateTable := &protos.CandidateRatio{}
+		keytable := "ballot_" + data
+		PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(keytable))
+		if(kvErr != nil) {
+			fmt.Printf("D__刷缓存读取UserBallot异常\n")
+		}
+		parserErr := proto.Unmarshal(PbTxBuf, CandidateTable)
+		if parserErr != nil  {
+			fmt.Printf("D__刷缓存CandidateRatio表错误\n")
+		}
+		//候选人缓存表
+		key := "cache_" + data
+		table := &protos.CacheVoteCandidate{}
+		PbTxBuf, kvErr = t.ctx.Ledger.ConfirmedTable.Get([]byte(key))
+		if kvErr != nil {
+			fmt.Printf("DT__当前用户%s第一次进来\n",key)
+		}else {
+			parserErr := proto.Unmarshal(PbTxBuf, table)
+			if parserErr != nil{
+				fmt.Printf("DT__读UserReward表错误\n")
+				return
+			}
+		}
+		table.VotingUser = CandidateTable.VotingUser
+		table.Ratio = CandidateTable.Ratio
+		table.TotalVote = CandidateTable.TatalVote
+		//写表
+		pbTxBuf, err := proto.Marshal(table)
+		if err != nil {
+			fmt.Printf("DT__解析UtxoMetaExplorer失败\n")
+		}
+		batchWrite.Put(append([]byte(lpb.ConfirmedTablePrefix), key...), pbTxBuf)
+	}
+	kvErr = batchWrite.Write() //原子写入
+	if kvErr != nil {
+		fmt.Printf("DT__刷缓存原子写表错误\n")
+	}
+
 }
 
 // 停止矿工
@@ -326,13 +386,6 @@ func (t *Miner) packBlock(ctx xctx.XContext, height int64,
 			return nil, fmt.Errorf("D__[Vote_Award] fail to generate vote award",  "err", err)
 		}
 		txList = append(txList, voteTxs...)
-	}
-	//刷缓存数据
-	if flag == true{
-		error := t.updateCacheTable()
-		if error != nil {
-			return nil, error
-		}
 	}
 
 	// 4.打包区块
