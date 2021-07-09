@@ -97,9 +97,8 @@ func (t *KernMethod) AddTokens(ctx contract.KContext) (*contract.Response, error
 	//购买的用户
 	sender := ctx.Initiator()
 	amountBuf := args["amount"]
-	desc := args["desc"]
-	if sender == "" || amountBuf == nil || string(desc) != "buy"{
-		return nil,fmt.Errorf(" sender is nil or amount is nil or desc error")
+	if sender == "" || amountBuf == nil{
+		return nil,fmt.Errorf(" sender is nil or amount is nil")
 	}
 	amount := big.NewInt(0)
 	_, isAmount := amount.SetString(string(amountBuf), 10)
@@ -177,14 +176,19 @@ func (t *KernMethod) SubTokens(ctx contract.KContext) (*contract.Response, error
 	//减少的用户
 	sender := ctx.Initiator()
 	amountBuf := args["amount"]
-	desc := args["desc"]
-	if sender == "" || amountBuf == nil || string(desc) != "sell"{
-		return nil,fmt.Errorf(" sender is nil or amount is nil or desc error")
+	if sender == "" || amountBuf == nil{
+		return nil,fmt.Errorf(" sender is nil or amount is nil")
 	}
 	amount := big.NewInt(0)
 	_, isAmount := amount.SetString(string(amountBuf), 10)
 	if !isAmount || amount.Cmp(big.NewInt(0)) == -1 {
 		return nil, fmt.Errorf("SubTokens failed, parse amount error")
+	}
+
+	// 查询sender余额
+	senderBalance, err := t.balanceOf(ctx, string(sender))
+	if err != nil {
+		return nil, fmt.Errorf("transfer gov tokens failed, query sender balance error")
 	}
 
 	//设置购买的key
@@ -199,6 +203,14 @@ func (t *KernMethod) SubTokens(ctx contract.KContext) (*contract.Response, error
 		if err != nil {
 			fmt.Printf("D__治理代币解析异常\n")
 			return nil,err
+		}
+		//比较并更新sender余额
+		for _, v := range senderBalance.LockedBalance {
+			tmpAmount := big.NewInt(0)
+			tmpAmount.Sub(senderBalance.TotalBalance, v)
+			if tmpAmount.Cmp(amount) < 0 {
+				return nil, fmt.Errorf("transfer gov tokens failed, sender's insufficient balance")
+			}
 		}
 		balance.TotalBalance.Sub(balance.TotalBalance,amount)
 		if balance.TotalBalance.Cmp(big.NewInt(0)) == -1 {

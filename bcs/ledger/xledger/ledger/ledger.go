@@ -455,14 +455,32 @@ func (l *Ledger) handleFork(oldTip []byte, newTipPre []byte, nextHash []byte, ba
 func (l *Ledger)AssignRewards(address string,blockAward *big.Int) *big.Int {
 
 	award := big.NewInt(0)
-	//读缓存表
-	key := "cache_" + address
-	table := &protos.CacheVoteCandidate{}
-	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(key))
+
+	//读term表l
+	toTable := "tdpos_term"
+	termTable := &protos.TermTable{}
+	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(toTable))
 	if kvErr != nil {
 		return award
 	}
-	parserErr := proto.Unmarshal(PbTxBuf, table)
+	parserErr := proto.Unmarshal(PbTxBuf, termTable)
+	if parserErr != nil {
+		//	fmt.Printf("D__读TermTable表错误\n")
+		return award
+	}
+	if termTable.NewCycle == true {
+		fmt.Printf("D__校验发现是新的周期\n")
+		return award
+	}
+
+	//读缓存表
+	key := "cache_" + address
+	table := &protos.CacheVoteCandidate{}
+	PbTxBuf, kvErr = l.ConfirmedTable.Get([]byte(key))
+	if kvErr != nil {
+		return award
+	}
+	parserErr = proto.Unmarshal(PbTxBuf, table)
 	if parserErr != nil{
 		fmt.Printf("D__校验分配奖励读UserReward表错误\n")
 		return award
@@ -876,6 +894,9 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 				Amount: value.Amount,
 			}
 			delete(table.FrozenDetail,v.(string))
+			if table.ThawDetail == nil {
+				table.ThawDetail = make(map[string]*protos.FrozenDetails)
+			}
 			table.ThawDetail[v.(string)] = tabledata
 		}
 	}
@@ -909,7 +930,18 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 		Height : l.GetMeta().TrunkHeight + 1 +20,
 
 	}
-	NodeTable.NodeDetails[NodeDetail.Height].NodeDetail = append(NodeTable.NodeDetails[NodeDetail.Height].NodeDetail,NodeDetail )
+	NodeDetails := &protos.NodeDetails{}
+	if NodeTable.NodeDetails[NodeDetail.Height] == nil {
+		//NodeTable.NodeDetails[NodeDetail.Height]
+		//NodeDetails := &protos.NodeDetails{}
+		NodeDetails.NodeDetail = append(NodeDetails.NodeDetail,NodeDetail )
+		NodeTable.NodeDetails[NodeDetail.Height] = NodeDetails
+	}else {
+		NodeDetails.NodeDetail = NodeTable.NodeDetails[NodeDetail.Height].NodeDetail
+		NodeDetails.NodeDetail = append(NodeDetails.NodeDetail,NodeDetail )
+		NodeTable.NodeDetails[NodeDetail.Height] = NodeDetails
+	}
+	//NodeTable.NodeDetails[NodeDetail.Height].NodeDetail = append(NodeTable.NodeDetails[NodeDetail.Height].NodeDetail,NodeDetail )
 	//写表
 	pbTxBuf, err = proto.Marshal(NodeTable)
 	if err != nil {
@@ -1138,7 +1170,7 @@ func (l *Ledger) WriteReCandidateTable (batch kvdb.Batch,user string,Args map[st
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + candidate...), pbTxBuf)
 	//所有提名表那删除这次提名人
-	toTable := "tdos_freezes_total_assets"
+	toTable := "tdpos_freezes_total_assets"
 	freetable := &protos.AllCandidate{}
 	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(toTable))
 	if kvErr == nil {
@@ -1224,7 +1256,7 @@ func (l *Ledger) WriteCandidateTable (batch kvdb.Batch,user string,Args map[stri
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + candidate...), pbTxBuf)
 
 	//在这儿记录一下所有提名人
-	toTable := "tdos_freezes_total_assets"
+	toTable := "tdpos_freezes_total_assets"
 	freetable := &protos.AllCandidate{}
 	PbTxBuf, kvErr = l.ConfirmedTable.Get([]byte(toTable))
 	if kvErr == nil {

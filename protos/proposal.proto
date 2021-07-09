@@ -124,3 +124,11 @@ message NominateDetails {
     bool isnominate = 2;
 }
 
+//记录周期term表
+message TermTable{
+    //当前term
+    int64 trem = 1;
+    //是否是新的一个周期
+    bool new_cycle = 2;
+}
+

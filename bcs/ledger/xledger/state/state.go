@@ -1173,10 +1173,15 @@ func (t *State)checkBuy(tx *pb.Transaction ,args map[string]string) error {
 		return errors.New("D__购买治理代币amount不能为空\n")
 	}
 	chainAmount := big.NewInt(0)
+	flag := false
 	for _ , data := range tx.TxOutputs{
 		if string(data.ToAddr) == "testa" {
 			chainAmount.SetBytes(data.Amount)
+			flag = true
 		}
+	}
+	if flag == false {
+		return errors.New("D__购买治理代币未给指定用户转账\n")
 	}
 	cliAmount := big.NewInt(0)
 	_,error := cliAmount.SetString(args["amount"],10)

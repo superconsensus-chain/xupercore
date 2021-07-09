@@ -137,10 +137,12 @@ func (t *Miner) Start() {
 		}
 		//当 isMiner=true isSync=true时，为新的一个周期
 		flag := false
-		if isMiner == true && isSync == true{
-			fmt.Printf("D__开始新的一个周期,刷新缓存表")
+		term , _ := t.ctx.Consensus.GetConsensusStatus()
+		//fmt.Printf("D__打印当前term: %d \n",term.GetCurrentTerm())
+		flag , err = t.ReadTermTable()
+		if flag == true{
 			t.UpdateCacheTable()
-			flag = true
+			fmt.Printf("D__打印当前term: %d \n",term.GetCurrentTerm())
 		}
 
 		// 3.如需要同步，尝试同步网络最新区块
@@ -169,12 +171,61 @@ func (t *Miner) Start() {
 		"ledgerTipId", utils.F(ledgerTipId), "stateTipId", utils.F(stateTipId))
 }
 
+//读term表
+func (t *Miner)ReadTermTable() (bool,error){
+	batchWrite := t.ctx.Ledger.ConfirmBatch
+	batchWrite.Reset()
+	toTable := "tdpos_term"
+	termTable := &protos.TermTable{}
+	PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(toTable))
+	term , termerror := t.ctx.Consensus.GetConsensusStatus()
+	if termerror != nil {
+		return false,nil
+	}
+	if kvErr == nil {
+		parserErr := proto.Unmarshal(PbTxBuf, termTable)
+		if parserErr != nil {
+			fmt.Printf("D__读TermTable表错误\n")
+			return false,parserErr
+		}
+		//如果trem相等并且NewCycle为false,说明重新记录，直接返回
+		if termTable.Trem == term.GetCurrentTerm() && termTable.NewCycle == false{
+			return false,nil
+		}
+
+		if termTable.Trem != term.GetCurrentTerm() {
+			termTable.NewCycle = true
+			termTable.Trem = term.GetCurrentTerm()
+		} else {
+			termTable.NewCycle = false
+		}
+	}else {
+		fmt.Printf("D__节点初始化\n")
+		termTable.NewCycle = false
+		termTable.Trem = term.GetCurrentTerm()
+	}
+	//写表
+	pbTxBuf, err := proto.Marshal(termTable)
+	if err != nil {
+		fmt.Printf("DT__解析TermTable失败\n")
+		return false,kvErr
+	}
+	batchWrite.Put(append([]byte(lpb.ConfirmedTablePrefix), toTable...), pbTxBuf)
+
+	kvErr = batchWrite.Write() //原子写入
+	if kvErr != nil {
+		fmt.Printf("DT__刷trem原子写表错误\n")
+		return false,kvErr
+	}
+	return termTable.NewCycle,nil
+}
+
 //刷新缓存表
 func (t *Miner)UpdateCacheTable(){
 	batchWrite := t.ctx.Ledger.ConfirmBatch
 	batchWrite.Reset()
 	//获取当前全部候选人，将候选人投票分红信息写入
-	toTable := "tdos_freezes_total_assets"
+	toTable := "tdpos_freezes_total_assets"
 	freetable := &protos.AllCandidate{}
 	PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(toTable))
 	if kvErr == nil {
