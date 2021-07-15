@@ -975,7 +975,31 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
 
-	fmt.Printf("D__申请冻结表执行完毕 \n")
+	//全网抵押总资产减少
+	toTable := "tdpos_freezes_total_assets"
+	freetable := &protos.AllCandidate{}
+	PbTxBuf, kvErr = l.ConfirmedTable.Get([]byte(toTable))
+	if kvErr == nil {
+		parserErr := proto.Unmarshal(PbTxBuf, freetable)
+		if parserErr != nil {
+			l.xlog.Warn("D__取消提案时解析读AllCandidate表错误","parserErr",parserErr)
+			return parserErr
+		}
+		oldAmount := big.NewInt(0)
+		oldAmount.SetString(freetable.Freemonry, 10)
+		freetable.Freemonry = oldAmount.Sub(oldAmount,amount).String()
+	}else {
+		l.xlog.Warn("btdpos_freezes_total_assets not fonud ", "kvErr", kvErr)
+		return kvErr
+	}
+	pbTxBuf, err = proto.Marshal(freetable)
+	if err != nil {
+		l.xlog.Warn("D__解析AllCandidate失败\n")
+		return err
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), toTable...), pbTxBuf)
+
+	//fmt.Printf("D__申请冻结表执行完毕 \n")
 	return nil
 }
 
@@ -1012,6 +1036,7 @@ func (l *Ledger) RevokeVote(batch kvdb.Batch,user string,Args map[string]string)
 		NewAmount := big.NewInt(0)
 		NewAmount.SetString(value,10)
 		value = NewAmount.Sub(NewAmount,ballots).String()
+		CandidateTable.MyVoting[candidate] = value
 	}
 	//撤销投票后，已使用的投票数减少
 	TotalAmount := big.NewInt(0)
@@ -1023,6 +1048,10 @@ func (l *Ledger) RevokeVote(batch kvdb.Batch,user string,Args map[string]string)
 		return errors.New("D__解析UserBallotTable失败\n")
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + user...), pbTxBuf)
+	kvErr := batch.Write() //原子写入
+	if kvErr != nil {
+		return errors.New("D__写表错误\n ")
+	}
 
 	//读撤销投票的用户表,修改被投票的内容
 	BeCandidateTable := &protos.CandidateRatio{}
@@ -1036,6 +1065,7 @@ func (l *Ledger) RevokeVote(batch kvdb.Batch,user string,Args map[string]string)
 		oldAmount := big.NewInt(0)
 		oldAmount.SetString(value,10)
 		value = oldAmount.Sub(oldAmount,ballots).String()
+		BeCandidateTable.VotingUser[user] = value
 	}
 	//被投票的总数也减少
 	BeAmount := big.NewInt(0)
@@ -1052,6 +1082,7 @@ func (l *Ledger) RevokeVote(batch kvdb.Batch,user string,Args map[string]string)
 
 //投票写表
 func (l *Ledger) VoteCandidateTable(batch kvdb.Batch,user string,Args map[string]string) error {
+	fmt.Printf("D__进入投票写表~~~~~~~~~~~~~~~~~~\n")
 	CandidateTable := &protos.CandidateRatio{}
 	error := l.ReadBallotTable(user,CandidateTable)
 	if error != nil {
@@ -1070,26 +1101,33 @@ func (l *Ledger) VoteCandidateTable(batch kvdb.Batch,user string,Args map[string
 		oldAmount := big.NewInt(0)
 		oldAmount.SetString(value,10)
 		value = oldAmount.Add(oldAmount,newAmount).String()
+		//fmt.Printf("D__投票后当前票数: %s \n",value)
+		CandidateTable.MyVoting[candidate] = value
 	}else {
 		if CandidateTable.MyVoting == nil {
 			CandidateTable.MyVoting = make(map[string]string)
 		}
 		CandidateTable.MyVoting[candidate] = amount
+		//fmt.Printf("D__第一次投，投票后当前票数: %s \n",value)
 	}
 	//已使用的投票数增加
 	tableAmount := big.NewInt(0)
 	tableAmount.SetString(CandidateTable.Used,10)
-	CandidateTable.Used = tableAmount.Add(tableAmount,tableAmount).String()
+	CandidateTable.Used = tableAmount.Add(tableAmount,newAmount).String()
 	//写表
 	pbTxBuf, err := proto.Marshal(CandidateTable)
 	if err != nil {
 		return errors.New("D__投票写表解析CandidateRatio失败\n")
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + user...), pbTxBuf)
+	kvErr := batch.Write() //原子写入
+	if kvErr != nil {
+		return errors.New("D__写表错误\n ")
+	}
 
 	//被投的人的投票提案表更新被投票的消息
 	BeCandidateTable := &protos.CandidateRatio{}
-	error = l.ReadBallotTable(user,BeCandidateTable)
+	error = l.ReadBallotTable(candidate,BeCandidateTable)
 	if error != nil {
 		return error
 	}
@@ -1099,11 +1137,12 @@ func (l *Ledger) VoteCandidateTable(batch kvdb.Batch,user string,Args map[string
 		oldAmount := big.NewInt(0)
 		oldAmount.SetString(value,10)
 		value = oldAmount.Add(oldAmount,newAmount).String()
+		BeCandidateTable.VotingUser[user] = value
 	}else {
-		if BeCandidateTable.MyVoting == nil {
-			BeCandidateTable.MyVoting = make(map[string]string)
+		if BeCandidateTable.VotingUser == nil {
+			BeCandidateTable.VotingUser = make(map[string]string)
 		}
-		BeCandidateTable.MyVoting[candidate] = amount
+		BeCandidateTable.VotingUser[user] = amount
 	}
 	//被投票的总数也增加
 	BeAmount := big.NewInt(0)
@@ -1153,6 +1192,10 @@ func (l *Ledger) WriteReCandidateTable (batch kvdb.Batch,user string,Args map[st
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + user...), pbTxBuf)
+	kvErr := batch.Write() //原子写入
+	if kvErr != nil {
+		return errors.New("D__写表错误\n ")
+	}
 
 	//被修改提名者信息
 	beCandidateTable := &protos.CandidateRatio{}
@@ -1229,6 +1272,10 @@ func (l *Ledger) WriteCandidateTable (batch kvdb.Batch,user string,Args map[stri
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + user...), pbTxBuf)
+	kvErr := batch.Write() //原子写入
+	if kvErr != nil {
+		return errors.New("D__写表错误\n ")
+	}
 
 	//走到这儿，写被提名人的表
 	ratioAmount := big.NewInt(0)
@@ -1331,7 +1378,7 @@ func (l *Ledger)WriteFreezeTable(batch kvdb.Batch,amount string,user string,txid
 	CandidateTable := &protos.CandidateRatio{}
 	if(kvErr != nil){
 		fmt.Printf("D__用户%s第一次增加治理代币\n",user)
-		CandidateTable.TatalVote = "0"
+		CandidateTable.TatalVote = amount
 	}else {
 		parserErr := proto.Unmarshal(PbTxBuf, CandidateTable)
 		if parserErr != nil {
@@ -1348,7 +1395,32 @@ func (l *Ledger)WriteFreezeTable(batch kvdb.Batch,amount string,user string,txid
 		fmt.Printf("D__购买治理代币时解析CandidateTable失败\n")
 		return err
 	}
+
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
+
+	//全网抵押总资产增加
+	toTable := "tdpos_freezes_total_assets"
+	freetable := &protos.AllCandidate{}
+	PbTxBuf, kvErr = l.ConfirmedTable.Get([]byte(toTable))
+	if kvErr == nil {
+		parserErr := proto.Unmarshal(PbTxBuf, freetable)
+		if parserErr != nil {
+			l.xlog.Warn("D__取消提案时解析读AllCandidate表错误","parserErr",parserErr)
+			return parserErr
+		}
+		oldAmount := big.NewInt(0)
+		oldAmount.SetString(freetable.Freemonry, 10)
+		freetable.Freemonry = newAmount.Add(newAmount,oldAmount).String()
+	}else {
+		freetable.Freemonry = amount
+	}
+	pbTxBuf, err = proto.Marshal(freetable)
+	if err != nil {
+		l.xlog.Warn("D__解析AllCandidate失败\n")
+		return err
+	}
+	batch.Put(append([]byte(pb.ConfirmedTablePrefix), toTable...), pbTxBuf)
+
 	return nil
 }
 

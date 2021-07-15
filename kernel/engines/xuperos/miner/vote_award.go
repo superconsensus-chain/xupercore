@@ -71,6 +71,9 @@ func (t *Miner) AssignRewards (address string,blockAward *big.Int)(*big.Int){
 		return award
 	}
 	parserErr := proto.Unmarshal(PbTxBuf, table)
+	if table.TotalVote == "0" || table.TotalVote == ""{
+		return award
+	}
 	if parserErr != nil{
 		fmt.Printf("D__分配奖励读UserReward表错误\n")
 		return award

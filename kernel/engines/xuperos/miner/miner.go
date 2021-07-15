@@ -537,17 +537,57 @@ func (t * Miner)GetThawTx(height int64)([]*lpb.Transaction, error) {
 		fmt.Printf("D__解析NodeTable错误，错误码： %s \n",parserErr)
 		return nil , parserErr
 	}
-	batch := t.ctx.State.NewBatch()
+	batch := t.ctx.Ledger.ConfirmBatch
+	batch.Reset()
 	value , ok :=  NodeTable.NodeDetails[height]
 	if ok {
 		for _ , data := range value.NodeDetail{
 			Address := data.Address
-			////查询这些交易，反转转账（全是在节点上操盘的，理论上不会失败，失败打印原因）
-			//txdata,err := t.ctx.Ledger.QueryTransaction([]byte(txId))
-			//if err != nil {
-			//	fmt.Printf("D__异常错误，退款交易查询错误，错误码: %s \n",err)
-			//	return nil, err
-			//}
+			//删除这个用户解冻中的信息
+			keytalbe := "amount_" + Address
+			//查看用户是否冻结过
+			PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(keytalbe))
+			table := &protos.FrozenAssetsTable{}
+			if(kvErr != nil){
+				fmt.Printf("D__确认区块时请冻结资产再操作\n")
+				return nil,kvErr
+			}else {
+				parserErr := proto.Unmarshal(PbTxBuf, table)
+				if parserErr != nil {
+					fmt.Printf("D__确认区块时读FrozenAssetsTable表错误\n")
+					return nil,parserErr
+				}
+			}
+			newTable := &protos.FrozenAssetsTable{
+				Total: table.Total,
+				FrozenDetail: table.FrozenDetail,
+				Timestamp: table.Timestamp,
+			}
+			newAmount := big.NewInt(0)
+			newAmount.SetString(table.Total, 10)
+			for key ,data := range table.ThawDetail{
+				if data.Height > height {
+					if newTable.ThawDetail == nil {
+						newTable.ThawDetail = make(map[string]*protos.FrozenDetails)
+					}
+					newTable.ThawDetail[key] = data
+					//总资产减少
+					OldAmount := big.NewInt(0)
+					OldAmount.SetString(data.Amount, 10)
+					newAmount.Sub(newAmount,OldAmount)
+				}
+			}
+			newTable.Total = newAmount.String()
+			//写表
+			pbTxBuf, err := proto.Marshal(newTable)
+			if err != nil {
+				fmt.Printf("D__解冻时解析NodeTable失败\n")
+				return nil,err
+			}
+			fmt.Printf("D__解冻成功，打印newTable : %s \n",newTable)
+			batch.Put(append([]byte(lpb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
+			//原子写入
+			batch.Write()
 			//反转转账,只是凭空构建，交易不记录总资产
 			tx,error := t.ctx.State.ReverseTx(Address,batch,data.Amount)
 			if error != nil {
@@ -556,6 +596,8 @@ func (t * Miner)GetThawTx(height int64)([]*lpb.Transaction, error) {
 			}
 			txs = append(txs, tx)
 		}
+	}else {
+		return nil , nil
 	}
 	//删除当前高度的信息
 	delete(NodeTable.NodeDetails,height)

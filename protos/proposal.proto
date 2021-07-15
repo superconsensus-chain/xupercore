@@ -132,3 +132,61 @@ message TermTable{
     bool new_cycle = 2;
 }
 
+
+message PledgeVotingResponse{
+    FrozenAssetsTable frozen_assets_table = 1;
+    repeated VoteDetailsStatus vote_details_status = 2;
+    //投票了多少节点
+    int64 my_vote = 3;
+    //全网冻结总量
+    string freezetotal = 4;
+    //治理代币总量
+    string total_amount = 5;
+    //消耗总量
+    string used_amount = 6;
+    //冻结中
+    string freeze_amount = 7;
+}
+
+message VoteDetailsStatus{
+    string toaddr = 1;
+    int64 ballots = 2;
+    int32 ratio = 3;
+    //当前候选人总票数
+    string totalballots = 4;
+}
+
+message VerificationInfo{
+    //总票数
+    string total = 1;
+    //分成比
+    int32 ratio = 2;
+    //投票百分比
+    string percentage =3;
+}
+
+message VerificationTable{
+    //验证人
+    map<string , VerificationInfo> verification = 1;
+    //候选验证人
+    map<string , VerificationInfo> candidate = 2;
+    //验证人数量
+    int64 len = 3;
+    //候选人数量
+    int64 len_candidate = 4;
+}
+
+//查看链的部分信息
+message BCStatusExplorer{
+    // bolck height
+    int64 height = 1;
+    //全网总资产
+    string total_money = 2;
+    //全网冻结资产
+    string free_monry = 3;
+    //冻结百分比
+    string percentage = 4;
+    //节点数
+    int64 nodes = 5;
+}
+
