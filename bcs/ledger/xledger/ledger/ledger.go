@@ -503,15 +503,15 @@ func (l *Ledger) IsValidTx(idx int, tx *pb.Transaction, block *pb.InternalBlock)
 		remainAward := l.AssignRewards(string(block.Proposer),awardTarget)
 		blockAward := big.NewInt(0)
 		blockAward.Sub(awardTarget,remainAward)
-		fmt.Printf("DT__当前奖励比: %s \n", blockAward.String())
-		fmt.Printf("DT__当前高度： %d , 出块人 : %s \n",block.Height,string(block.Proposer))
+		//fmt.Printf("DT__当前奖励比: %s \n", blockAward.String())
+		//fmt.Printf("DT__当前高度： %d , 出块人 : %s \n",block.Height,string(block.Proposer))
 
 		amountBytes := tx.TxOutputs[0].Amount
 		awardN := big.NewInt(0)
 		awardN.SetBytes(amountBytes)
-		fmt.Printf("DT__awardN奖励: %s \n",awardN.String())
+		//fmt.Printf("DT__awardN奖励: %s \n",awardN.String())
 		if awardN.Cmp(blockAward) != 0 {
-			l.xlog.Warn("invalid block award found", "award", awardN.String(), "target", awardTarget.String())
+		//	l.xlog.Warn("invalid block award found", "award", awardN.String(), "target", awardTarget.String())
 			return false
 		}
 	}
@@ -725,7 +725,7 @@ func (l *Ledger) ConfirmBlock(block *pb.InternalBlock, isRoot bool) ConfirmStatu
 				case "Sell":
 					l.WriteThawTable(batchWrite,string(tx.TxInputs[0].FromAddr),tx.Desc)
 				default:
-					fmt.Printf("D__解析交易存表时方法异常，异常方法名: %s \n",tmpReq.MethodName)
+					l.xlog.Warn("D__解析交易存表时方法异常，异常方法名:","tmpReq.MethodName",tmpReq.MethodName)
 				}
 			}
 			if tmpReq.ModuleName == "xkernel" && tmpReq.ContractName == "$tdpos"{
@@ -739,7 +739,7 @@ func (l *Ledger) ConfirmBlock(block *pb.InternalBlock, isRoot bool) ConfirmStatu
 				case "revokeVote":
 					l.RevokeVote(batchWrite,string(tx.TxInputs[0].FromAddr),tmpReq.Args)
 				default:
-					fmt.Printf("D__解析tdpos交易存表时方法异常，异常方法名: %s \n",tmpReq.MethodName)
+					l.xlog.Warn("D__解析tdpos交易存表时方法异常，异常方法名:","tmpReq.MethodName",tmpReq.MethodName)
 				}
 			}
 		}
@@ -857,7 +857,7 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 	txDesc := &TxDesc{}
 	jsErr := json.Unmarshal(desc,txDesc)
 	if jsErr != nil {
-		fmt.Printf("D__确认区块时解析desc错误 \n")
+		l.xlog.Warn("D__确认区块时解析desc错误")
 		return jsErr
 	}
 	var txids []interface{}
@@ -874,12 +874,12 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(keytalbe))
 	table := &protos.FrozenAssetsTable{}
 	if(kvErr != nil){
-		fmt.Printf("D__确认区块时请冻结资产再操作\n")
+		l.xlog.Warn("D__确认区块时请冻结资产再操作")
 		return kvErr
 	}else {
 		parserErr := proto.Unmarshal(PbTxBuf, table)
 		if parserErr != nil {
-			fmt.Printf("D__确认区块时读FrozenAssetsTable表错误\n")
+			l.xlog.Warn("D__确认区块时读FrozenAssetsTable表错误")
 			return parserErr
 		}
 	}
@@ -902,7 +902,7 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 	}
 	pbTxBuf, err := proto.Marshal(table)
 	if err != nil {
-		fmt.Printf("D__确认区块时解析FrozenAssetsTable失败\n")
+		l.xlog.Warn("D__确认区块时解析FrozenAssetsTable失败")
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
@@ -913,11 +913,11 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 	PbTxBuf, kvErr = l.ConfirmedTable.Get([]byte(keytalbe))
 	NodeTable := &protos.NodeTable{}
 	if(kvErr != nil) {
-		fmt.Printf("D__第一次申请解冻\n", user)
+		//fmt.Printf("D__第一次申请解冻\n", user)
 	}else {
 		parserErr := proto.Unmarshal(PbTxBuf, NodeTable)
 		if parserErr != nil {
-			fmt.Printf("D__解冻治理代币时读NodeTable表错误\n")
+			l.xlog.Warn("D__解冻治理代币时读NodeTable表错误")
 			return parserErr
 		}
 	}
@@ -945,7 +945,7 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 	//写表
 	pbTxBuf, err = proto.Marshal(NodeTable)
 	if err != nil {
-		fmt.Printf("D__解析NodeTable失败\n")
+		l.xlog.Warn("D__解析NodeTable失败")
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
@@ -955,12 +955,12 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 	PbTxBuf, kvErr = l.ConfirmedTable.Get([]byte(keytalbe))
 	CandidateTable := &protos.CandidateRatio{}
 	if(kvErr != nil){
-		fmt.Printf("D__用户未投票\n",user)
+		l.xlog.Warn("D__用户未投票",user)
 		return kvErr
 	}
 	parserErr := proto.Unmarshal(PbTxBuf, CandidateTable)
 	if parserErr != nil {
-		fmt.Printf("D__解冻治理代币时读CandidateRatio表错误\n")
+		l.xlog.Warn("D__解冻治理代币时读CandidateRatio表错误")
 		return parserErr
 	}
 	oldAmount := big.NewInt(0)
@@ -970,7 +970,7 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 	//开始写治理投票表
 	pbTxBuf, err = proto.Marshal(CandidateTable)
 	if err != nil {
-		fmt.Printf("D__购买治理代币时解析CandidateTable失败\n")
+		l.xlog.Warn("D__购买治理代币时解析CandidateTable失败")
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
@@ -1188,7 +1188,7 @@ func (l *Ledger) WriteReCandidateTable (batch kvdb.Batch,user string,Args map[st
 	//写表
 	pbTxBuf, err := proto.Marshal(CandidateTable)
 	if err != nil {
-		fmt.Printf("D__取消提案时解析CandidateTable失败\n")
+		l.xlog.Warn("D__取消提案时解析CandidateTable失败")
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + user...), pbTxBuf)
@@ -1208,7 +1208,7 @@ func (l *Ledger) WriteReCandidateTable (batch kvdb.Batch,user string,Args map[st
 	//写表
 	pbTxBuf, err = proto.Marshal(beCandidateTable)
 	if err != nil {
-		fmt.Printf("D__取消提案时解析被修改提名者信息CandidateTable失败\n")
+		l.xlog.Warn("D__取消提案时解析被修改提名者信息CandidateTable失败")
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + candidate...), pbTxBuf)
@@ -1219,7 +1219,7 @@ func (l *Ledger) WriteReCandidateTable (batch kvdb.Batch,user string,Args map[st
 	if kvErr == nil {
 		parserErr := proto.Unmarshal(PbTxBuf, freetable)
 		if parserErr != nil {
-			fmt.Printf("D__取消提案时解析读AllCandidate表错误\n")
+			l.xlog.Warn("D__取消提案时解析读AllCandidate表错误")
 			return parserErr
 		}
 	}
@@ -1251,7 +1251,7 @@ func (l *Ledger) WriteCandidateTable (batch kvdb.Batch,user string,Args map[stri
 		return error
 	}
 	if CandidateTable.Used == ""{
-		fmt.Printf("D__用户%s第一次消耗治理代币\n",user)
+		//fmt.Printf("D__用户%s第一次消耗治理代币\n",user)
 		CandidateTable.Used = "0"
 	}
 	newAmout := big.NewInt(0)
@@ -1268,7 +1268,7 @@ func (l *Ledger) WriteCandidateTable (batch kvdb.Batch,user string,Args map[stri
 	//写表
 	pbTxBuf, err := proto.Marshal(CandidateTable)
 	if err != nil {
-		fmt.Printf("D__提案时解析CandidateTable失败\n")
+		l.xlog.Warn("D__提案时解析CandidateTable失败")
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + user...), pbTxBuf)
@@ -1284,11 +1284,11 @@ func (l *Ledger) WriteCandidateTable (batch kvdb.Batch,user string,Args map[stri
 	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(keytalbe))
 	beCandidateTable := &protos.CandidateRatio{}
 	if(kvErr != nil){
-		fmt.Printf("D__第一次提名此用户%s \n",candidate)
+		//fmt.Printf("D__第一次提名此用户%s \n",candidate)
 	}else {
 		parserErr := proto.Unmarshal(PbTxBuf, beCandidateTable)
 		if parserErr != nil {
-			fmt.Printf("D__提案时解析读CandidateRatio表错误\n")
+			l.xlog.Warn("D__提案时解析读CandidateRatio表错误")
 			return parserErr
 		}
 	}
@@ -1297,7 +1297,7 @@ func (l *Ledger) WriteCandidateTable (batch kvdb.Batch,user string,Args map[stri
 	//写表
 	pbTxBuf, err = proto.Marshal(beCandidateTable)
 	if err != nil {
-		fmt.Printf("D__提案时解析CandidateTable失败\n")
+		l.xlog.Warn("D__提案时解析CandidateTable失败")
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + candidate...), pbTxBuf)
@@ -1309,11 +1309,11 @@ func (l *Ledger) WriteCandidateTable (batch kvdb.Batch,user string,Args map[stri
 	if kvErr == nil {
 		parserErr := proto.Unmarshal(PbTxBuf, freetable)
 		if parserErr != nil {
-			fmt.Printf("D__读UtxoMetaExplorer表错误\n")
+			l.xlog.Warn("D__读UtxoMetaExplorer表错误")
 			return parserErr
 		}
 	}else {
-		fmt.Printf("D__用户%s是第一个提案人 \n",candidate)
+		//fmt.Printf("D__用户%s是第一个提案人 \n",candidate)
 	}
 	if freetable.Candidate == nil {
 		freetable.Candidate = make(map[string]string)
@@ -1337,12 +1337,12 @@ func (l *Ledger)WriteFreezeTable(batch kvdb.Batch,amount string,user string,txid
 	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(keytalbe))
 	table := &protos.FrozenAssetsTable{}
 	if(kvErr != nil){
-		fmt.Printf("D__用户%s第一次冻结\n",string(user))
+		//fmt.Printf("D__用户%s第一次冻结\n",string(user))
 		table.Total = "0"
 	}else {
 		parserErr := proto.Unmarshal(PbTxBuf, table)
 		if parserErr != nil {
-			fmt.Printf("D__购买治理代币时读FrozenAssetsTable表错误\n")
+			l.xlog.Warn("D__购买治理代币时读FrozenAssetsTable表错误")
 			return parserErr
 		}
 	}
@@ -1358,7 +1358,7 @@ func (l *Ledger)WriteFreezeTable(batch kvdb.Batch,amount string,user string,txid
 	oldAmount := big.NewInt(0)
 	oldAmount.SetString(table.Total,10)
 	if !isAmount || newAmount.Cmp(big.NewInt(0)) == -1 {
-		fmt.Printf("D__购买治理代币时解析amount失败\n")
+		l.xlog.Warn("D__购买治理代币时解析amount失败")
 	}
 	tabledata.Amount = newAmount.String()
 	table.FrozenDetail[hex.EncodeToString(txid)] = tabledata
@@ -1366,7 +1366,7 @@ func (l *Ledger)WriteFreezeTable(batch kvdb.Batch,amount string,user string,txid
 	//开始写表
 	pbTxBuf, err := proto.Marshal(table)
 	if err != nil {
-		fmt.Printf("D__购买治理代币时解析FrozenAssetsTable失败\n")
+		l.xlog.Warn("D__购买治理代币时解析FrozenAssetsTable失败")
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
@@ -1377,12 +1377,12 @@ func (l *Ledger)WriteFreezeTable(batch kvdb.Batch,amount string,user string,txid
 	PbTxBuf, kvErr = l.ConfirmedTable.Get([]byte(keytalbe))
 	CandidateTable := &protos.CandidateRatio{}
 	if(kvErr != nil){
-		fmt.Printf("D__用户%s第一次增加治理代币\n",user)
+		//fmt.Printf("D__用户%s第一次增加治理代币\n",user)
 		CandidateTable.TatalVote = amount
 	}else {
 		parserErr := proto.Unmarshal(PbTxBuf, CandidateTable)
 		if parserErr != nil {
-			fmt.Printf("D__购买治理代币时读CandidateRatio表错误\n")
+			l.xlog.Warn("D__购买治理代币时读CandidateRatio表错误")
 			return parserErr
 		}
 		oldAmount := big.NewInt(0)
@@ -1392,7 +1392,7 @@ func (l *Ledger)WriteFreezeTable(batch kvdb.Batch,amount string,user string,txid
 	//开始写治理投票表
 	pbTxBuf, err = proto.Marshal(CandidateTable)
 	if err != nil {
-		fmt.Printf("D__购买治理代币时解析CandidateTable失败\n")
+		l.xlog.Warn("D__购买治理代币时解析CandidateTable失败")
 		return err
 	}
 

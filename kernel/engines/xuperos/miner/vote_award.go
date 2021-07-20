@@ -25,7 +25,7 @@ func (t *Miner) GenerateVoteAward(address string ,remainAward *big.Int) ([]*lpb.
 	}
 	parserErr := proto.Unmarshal(PbTxBuf, table)
 	if parserErr != nil{
-		fmt.Printf("D__分配奖励读CacheVoteCandidate表错误\n")
+		t.log.Warn("D__分配奖励读CacheVoteCandidate表错误")
 		return nil , kvErr
 	}
 
@@ -39,13 +39,13 @@ func (t *Miner) GenerateVoteAward(address string ,remainAward *big.Int) ([]*lpb.
 		r.SetString(fmt.Sprintf("%d/%d", newdata.Int64(), totalAmount.Int64()))
 		ratio, err := strconv.ParseFloat(r.FloatString(16), 10)
 		if err != nil {
-			fmt.Printf("D__[Vote_Award] fail to ratio parse float64", "err", err)
+			t.log.Warn("D__[Vote_Award] fail to ratio parse float64", "err", err)
 			return nil, err
 		}
 		//投票奖励
 		voteAward := t.CalcVoteAward(remainAward.Int64(), ratio)
-		ratioStr := fmt.Sprintf("%.16f", ratio)
-		fmt.Printf("D__打印分成radtio %s \n",ratioStr)
+		//ratioStr := fmt.Sprintf("%.16f", ratio)
+		//fmt.Printf("D__打印分成radtio %s \n",ratioStr)
 		//奖励为0的不生成交易
 		if voteAward.Int64() == 0 {
 			continue
@@ -53,7 +53,7 @@ func (t *Miner) GenerateVoteAward(address string ,remainAward *big.Int) ([]*lpb.
 		//生成交易
 		voteawardtx, err := tx.GenerateVoteAwardTx([]byte(key), voteAward.String(), []byte{'1'})
 		if err != nil {
-			fmt.Printf("D__[Vote_Award] fail to generate vote award tx", "err", err)
+			t.log.Warn("D__[Vote_Award] fail to generate vote award tx", "err", err)
 			return nil, err
 		}
 		txs = append(txs, voteawardtx)
@@ -75,7 +75,7 @@ func (t *Miner) AssignRewards (address string,blockAward *big.Int)(*big.Int){
 		return award
 	}
 	if parserErr != nil{
-		fmt.Printf("D__分配奖励读UserReward表错误\n")
+		t.log.Warn("D__分配奖励读UserReward表错误")
 		return award
 	}
 	ratData := table.Ratio

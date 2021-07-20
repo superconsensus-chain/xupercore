@@ -137,12 +137,12 @@ func (t *Miner) Start() {
 		}
 		//当 isMiner=true isSync=true时，为新的一个周期
 		flag := false
-		term , _ := t.ctx.Consensus.GetConsensusStatus()
+	//	term , _ := t.ctx.Consensus.GetConsensusStatus()
 		//fmt.Printf("D__打印当前term: %d \n",term.GetCurrentTerm())
-		flag , err = t.ReadTermTable()
+		flag , err = t.ReadTermTable(ctx)
 		if flag == true{
-			t.UpdateCacheTable()
-			fmt.Printf("D__打印当前term: %d \n",term.GetCurrentTerm())
+			t.UpdateCacheTable(ctx)
+	//		fmt.Printf("D__打印当前term: %d \n",term.GetCurrentTerm())
 		}
 
 		// 3.如需要同步，尝试同步网络最新区块
@@ -172,9 +172,9 @@ func (t *Miner) Start() {
 }
 
 //读term表
-func (t *Miner)ReadTermTable() (bool,error){
+func (t *Miner)ReadTermTable(ctx xctx.XContext) (bool,error){
 	batchWrite := t.ctx.Ledger.ConfirmBatch
-	batchWrite.Reset()
+	//batchWrite.Reset()
 	toTable := "tdpos_term"
 	termTable := &protos.TermTable{}
 	PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(toTable))
@@ -185,7 +185,7 @@ func (t *Miner)ReadTermTable() (bool,error){
 	if kvErr == nil {
 		parserErr := proto.Unmarshal(PbTxBuf, termTable)
 		if parserErr != nil {
-			fmt.Printf("D__读TermTable表错误\n")
+			ctx.GetLog().Warn("D__读TermTable表错误")
 			return false,parserErr
 		}
 		//如果trem相等并且NewCycle为false,说明重新记录，直接返回
@@ -200,30 +200,30 @@ func (t *Miner)ReadTermTable() (bool,error){
 			termTable.NewCycle = false
 		}
 	}else {
-		fmt.Printf("D__节点初始化\n")
+		ctx.GetLog().Warn("D__节点初始化")
 		termTable.NewCycle = false
 		termTable.Trem = term.GetCurrentTerm()
 	}
 	//写表
 	pbTxBuf, err := proto.Marshal(termTable)
 	if err != nil {
-		fmt.Printf("DT__解析TermTable失败\n")
+		ctx.GetLog().Warn("DT__解析TermTable失败")
 		return false,kvErr
 	}
 	batchWrite.Put(append([]byte(lpb.ConfirmedTablePrefix), toTable...), pbTxBuf)
 
 	kvErr = batchWrite.Write() //原子写入
 	if kvErr != nil {
-		fmt.Printf("DT__刷trem原子写表错误\n")
+		ctx.GetLog().Warn("DT__刷trem原子写表错误")
 		return false,kvErr
 	}
 	return termTable.NewCycle,nil
 }
 
 //刷新缓存表
-func (t *Miner)UpdateCacheTable(){
+func (t *Miner)UpdateCacheTable(ctx xctx.XContext){
 	batchWrite := t.ctx.Ledger.ConfirmBatch
-	batchWrite.Reset()
+	//batchWrite.Reset()
 	//获取当前全部候选人，将候选人投票分红信息写入
 	toTable := "tdpos_freezes_total_assets"
 	freetable := &protos.AllCandidate{}
@@ -231,7 +231,7 @@ func (t *Miner)UpdateCacheTable(){
 	if kvErr == nil {
 		parserErr := proto.Unmarshal(PbTxBuf, freetable)
 		if parserErr != nil {
-			fmt.Printf("D__读UtxoMetaExplorer表错误\n")
+			ctx.GetLog().Warn("D__读UtxoMetaExplorer表错误")
 			return
 		}
 	}else {
@@ -243,22 +243,22 @@ func (t *Miner)UpdateCacheTable(){
 		keytable := "ballot_" + data
 		PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(keytable))
 		if(kvErr != nil) {
-			fmt.Printf("D__刷缓存读取UserBallot异常\n")
+			ctx.GetLog().Warn("D__刷缓存读取UserBallot异常")
 		}
 		parserErr := proto.Unmarshal(PbTxBuf, CandidateTable)
 		if parserErr != nil  {
-			fmt.Printf("D__刷缓存CandidateRatio表错误\n")
+			ctx.GetLog().Warn("D__刷缓存CandidateRatio表错误")
 		}
 		//候选人缓存表
 		key := "cache_" + data
 		table := &protos.CacheVoteCandidate{}
 		PbTxBuf, kvErr = t.ctx.Ledger.ConfirmedTable.Get([]byte(key))
 		if kvErr != nil {
-			fmt.Printf("DT__当前用户%s第一次进来\n",key)
+			//fmt.Printf("DT__当前用户%s第一次进来\n",key)
 		}else {
 			parserErr := proto.Unmarshal(PbTxBuf, table)
 			if parserErr != nil{
-				fmt.Printf("DT__读UserReward表错误\n")
+				ctx.GetLog().Warn("DT__读UserReward表错误")
 				return
 			}
 		}
@@ -268,13 +268,13 @@ func (t *Miner)UpdateCacheTable(){
 		//写表
 		pbTxBuf, err := proto.Marshal(table)
 		if err != nil {
-			fmt.Printf("DT__解析UtxoMetaExplorer失败\n")
+			ctx.GetLog().Warn("DT__解析UtxoMetaExplorer失败")
 		}
 		batchWrite.Put(append([]byte(lpb.ConfirmedTablePrefix), key...), pbTxBuf)
 	}
 	kvErr = batchWrite.Write() //原子写入
 	if kvErr != nil {
-		fmt.Printf("DT__刷缓存原子写表错误\n")
+		ctx.GetLog().Warn("DT__刷缓存原子写表错误\n")
 	}
 
 }
@@ -405,9 +405,9 @@ func (t *Miner) packBlock(ctx xctx.XContext, height int64,
 	ctx.GetLog().Debug("pack block get general tx succ", "txCount", len(generalTxList))
 
 	// 2.1 查看节点待解冻信息，看其是否有冻结的
-	thawTx, err := t.GetThawTx(height)
+	thawTx, err := t.GetThawTx(height,ctx)
 	if err != nil {
-		fmt.Printf("D__解冻出块时查询解冻信息失败\n")
+		ctx.GetLog().Warn("D__解冻出块时查询解冻信息失败\n")
 		return nil, err
 	}
 
@@ -522,23 +522,23 @@ func (t *Miner) getAwardTx(height int64,flag bool) (*lpb.Transaction, *big.Int,e
 }
 
 //构建解冻交易
-func (t * Miner)GetThawTx(height int64)([]*lpb.Transaction, error) {
+func (t * Miner)GetThawTx(height int64,ctx xctx.XContext)([]*lpb.Transaction, error) {
 	//先获取节点冻结信息
 	txs := []*lpb.Transaction{}
 	keytable := "nodeinfo_" + "tdos_thaw_total_assets"
 	PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(keytable))
 	NodeTable := &protos.NodeTable{}
-	if(kvErr != nil) {
-		fmt.Printf("D__节点中不含解冻信息\n")
+	if kvErr != nil {
+		//ctx.GetLog().Warn("D__节点中不含解冻信息")
 		return nil,nil
 	}
 	parserErr := proto.Unmarshal(PbTxBuf, NodeTable)
 	if parserErr != nil {
-		fmt.Printf("D__解析NodeTable错误，错误码： %s \n",parserErr)
+		ctx.GetLog().Warn("D__解析NodeTable错误，错误码","parserErr",parserErr)
 		return nil , parserErr
 	}
 	batch := t.ctx.Ledger.ConfirmBatch
-	batch.Reset()
+	//batch.Reset()
 	value , ok :=  NodeTable.NodeDetails[height]
 	if ok {
 		for _ , data := range value.NodeDetail{
@@ -549,12 +549,12 @@ func (t * Miner)GetThawTx(height int64)([]*lpb.Transaction, error) {
 			PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(keytalbe))
 			table := &protos.FrozenAssetsTable{}
 			if(kvErr != nil){
-				fmt.Printf("D__确认区块时请冻结资产再操作\n")
+				ctx.GetLog().Warn("D__确认区块时请冻结资产再操作")
 				return nil,kvErr
 			}else {
 				parserErr := proto.Unmarshal(PbTxBuf, table)
 				if parserErr != nil {
-					fmt.Printf("D__确认区块时读FrozenAssetsTable表错误\n")
+					ctx.GetLog().Warn("D__确认区块时读FrozenAssetsTable表错误")
 					return nil,parserErr
 				}
 			}
@@ -571,9 +571,15 @@ func (t * Miner)GetThawTx(height int64)([]*lpb.Transaction, error) {
 						newTable.ThawDetail = make(map[string]*protos.FrozenDetails)
 					}
 					newTable.ThawDetail[key] = data
+					////总资产减少
+					//OldAmount := big.NewInt(0)
+					//OldAmount.SetString(data.Amount, 10)
+					//newAmount.Sub(newAmount,OldAmount)
+				}else {
 					//总资产减少
 					OldAmount := big.NewInt(0)
 					OldAmount.SetString(data.Amount, 10)
+					//fmt.Printf("D__总资产减少: %s \n",OldAmount.String())
 					newAmount.Sub(newAmount,OldAmount)
 				}
 			}
@@ -581,17 +587,17 @@ func (t * Miner)GetThawTx(height int64)([]*lpb.Transaction, error) {
 			//写表
 			pbTxBuf, err := proto.Marshal(newTable)
 			if err != nil {
-				fmt.Printf("D__解冻时解析NodeTable失败\n")
+				ctx.GetLog().Warn("D__解冻时解析NodeTable失败")
 				return nil,err
 			}
-			fmt.Printf("D__解冻成功，打印newTable : %s \n",newTable)
+			//fmt.Printf("D__解冻成功，打印newTable : %s \n",newTable)
 			batch.Put(append([]byte(lpb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
 			//原子写入
 			batch.Write()
 			//反转转账,只是凭空构建，交易不记录总资产
 			tx,error := t.ctx.State.ReverseTx(Address,batch,data.Amount)
 			if error != nil {
-				fmt.Printf("D__反转转账构造交易失败.,error: %s \n",error)
+				ctx.GetLog().Warn("D__反转转账构造交易失败.,error: %s \n",error)
 				return nil, error
 			}
 			txs = append(txs, tx)
@@ -604,17 +610,17 @@ func (t * Miner)GetThawTx(height int64)([]*lpb.Transaction, error) {
 	//写表
 	pbTxBuf, err := proto.Marshal(NodeTable)
 	if err != nil {
-		fmt.Printf("D__解冻时解析NodeTable失败\n")
+		ctx.GetLog().Warn("D__解冻时解析NodeTable失败")
 		return nil,err
 	}
 	batch.Put(append([]byte(lpb.ConfirmedTablePrefix), keytable...), pbTxBuf)
 	//原子写入
 	writeErr := batch.Write()
 	if writeErr != nil {
-		fmt.Printf("D__解冻交易时原子写入错误error %s , \n", writeErr)
+		ctx.GetLog().Warn("D__解冻交易时原子写入错误", "writeErr",writeErr)
 		return nil,writeErr
 	}
-	fmt.Printf("D__解冻交易拼接成功\n")
+	//fmt.Printf("D__解冻交易拼接成功\n")
 	return txs, nil
 }
 

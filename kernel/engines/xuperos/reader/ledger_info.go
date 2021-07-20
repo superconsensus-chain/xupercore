@@ -271,7 +271,7 @@ func (t *ledgerReader)GetSystemStatusExplorer()(*protos.BCStatusExplorer,error){
 	//获取冻结总资产
 	out.FreeMonry = freetable.Freemonry
 	//计算冻结百分比
-	fmt.Printf("D__打印FreeMonry %s \n",out.FreeMonry)
+	//fmt.Printf("D__打印FreeMonry %s \n",out.FreeMonry)
 	if out.FreeMonry == ""{
 		return out,nil
 	}
@@ -307,9 +307,12 @@ func (t *ledgerReader)GetVerification(address string)(*protos.VerificationTable,
 		CandidateRatio := &protos.CandidateRatio{}
 		VerificationInfo := &protos.VerificationInfo{}
 		_,error := t.ReadUserBallot(data,CandidateRatio)
-		if error == nil {
+		if error == nil && CandidateRatio.Ratio != 0{
 			//fmt.Printf("D__打印当前CandidateRatio: %s\n",CandidateRatio)
 			VerificationInfo.Total = CandidateRatio.BeVotedTotal
+			if VerificationInfo.Total == ""{
+				VerificationInfo.Total = "0"
+			}
 			VerificationInfo.Ratio = int32(CandidateRatio.Ratio)
 			value , ok := CandidateRatio.VotingUser[address]
 			if ok {
@@ -351,6 +354,9 @@ func (t *ledgerReader)GetVerification(address string)(*protos.VerificationTable,
 		_,error := t.ReadUserBallot(data,CandidateRatio)
 		if error == nil {
 			VerificationInfo.Total = CandidateRatio.BeVotedTotal
+			if VerificationInfo.Total == "" {
+				VerificationInfo.Total = "0"
+			}
 			VerificationInfo.Ratio = int32(CandidateRatio.Ratio)
 			value , ok := CandidateRatio.VotingUser[address]
 			if ok {
