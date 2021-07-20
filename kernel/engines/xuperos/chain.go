@@ -229,6 +229,10 @@ func (t *Chain) PreExec(ctx xctx.XContext, reqs []*protos.InvokeRequest, initiat
 		//UtxoInputs:  utxoInputs,
 		//UtxoOutputs: utxoOutputs,
 	}
+	//目前这儿转账加个手续费,默认手续费操作不能低于1000
+	if invokeResponse.GasUsed < 1000 {
+		invokeResponse.GasUsed = 1000
+	}
 
 	return invokeResponse, nil
 }

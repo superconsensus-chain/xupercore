@@ -153,6 +153,11 @@ func (t *Miner) Start() {
 		if err == nil && isMiner {
 			err = t.mining(ctx,flag)
 		}
+		// 4.1 删除解冻区块后的部分数据
+		//获取高度
+		height := t.ctx.Ledger.GetMeta().TrunkHeight + 1
+		t.ClearThawTx(height,ctx)
+
 		// 5.如果出错，休眠3s后重试，防止cpu被打满
 		if err != nil && !t.IsExit() {
 			ctx.GetLog().Warn("miner run occurred error,sleep 3s try", "err", err)
@@ -528,14 +533,50 @@ func (t * Miner)GetThawTx(height int64,ctx xctx.XContext)([]*lpb.Transaction, er
 	keytable := "nodeinfo_" + "tdos_thaw_total_assets"
 	PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(keytable))
 	NodeTable := &protos.NodeTable{}
-	if kvErr != nil {
-		//ctx.GetLog().Warn("D__节点中不含解冻信息")
+	if(kvErr != nil) {
+		//fmt.Printf("D__节点中不含解冻信息\n")
 		return nil,nil
 	}
 	parserErr := proto.Unmarshal(PbTxBuf, NodeTable)
 	if parserErr != nil {
-		ctx.GetLog().Warn("D__解析NodeTable错误，错误码","parserErr",parserErr)
+		fmt.Printf("D__解析NodeTable错误，错误码： %s \n",parserErr)
 		return nil , parserErr
+	}
+	batch := t.ctx.Ledger.ConfirmBatch
+	//batch.Reset()
+	value , ok :=  NodeTable.NodeDetails[height]
+	if ok {
+		for _ , data := range value.NodeDetail{
+			Address := data.Address
+			//反转转账,只是凭空构建，交易不记录总资产
+			tx,error := t.ctx.State.ReverseTx(Address,batch,data.Amount)
+			if error != nil {
+				ctx.GetLog().Warn("D__反转转账构造交易失败","error",error)
+				return nil, error
+			}
+			txs = append(txs, tx)
+		}
+	}else {
+		return nil , nil
+	}
+
+	//fmt.Printf("D__解冻交易拼接成功\n")
+	return txs, nil
+}
+
+func (t * Miner)ClearThawTx(height int64,ctx xctx.XContext)error{
+
+	keytable := "nodeinfo_" + "tdos_thaw_total_assets"
+	PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(keytable))
+	NodeTable := &protos.NodeTable{}
+	if(kvErr != nil) {
+		ctx.GetLog().Warn("D__节点中不含解冻信息")
+		return nil
+	}
+	parserErr := proto.Unmarshal(PbTxBuf, NodeTable)
+	if parserErr != nil {
+		ctx.GetLog().Warn("D__解析NodeTable错误","parserErr",parserErr)
+		return parserErr
 	}
 	batch := t.ctx.Ledger.ConfirmBatch
 	//batch.Reset()
@@ -548,14 +589,14 @@ func (t * Miner)GetThawTx(height int64,ctx xctx.XContext)([]*lpb.Transaction, er
 			//查看用户是否冻结过
 			PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(keytalbe))
 			table := &protos.FrozenAssetsTable{}
-			if(kvErr != nil){
+			if kvErr != nil {
 				ctx.GetLog().Warn("D__确认区块时请冻结资产再操作")
-				return nil,kvErr
+				return kvErr
 			}else {
 				parserErr := proto.Unmarshal(PbTxBuf, table)
 				if parserErr != nil {
 					ctx.GetLog().Warn("D__确认区块时读FrozenAssetsTable表错误")
-					return nil,parserErr
+					return parserErr
 				}
 			}
 			newTable := &protos.FrozenAssetsTable{
@@ -563,18 +604,16 @@ func (t * Miner)GetThawTx(height int64,ctx xctx.XContext)([]*lpb.Transaction, er
 				FrozenDetail: table.FrozenDetail,
 				Timestamp: table.Timestamp,
 			}
+			//	fmt.Printf("D__打印table: %s \n",table)
 			newAmount := big.NewInt(0)
 			newAmount.SetString(table.Total, 10)
 			for key ,data := range table.ThawDetail{
+				//fmt.Printf("D__打印data: %s \n",data)
 				if data.Height > height {
 					if newTable.ThawDetail == nil {
 						newTable.ThawDetail = make(map[string]*protos.FrozenDetails)
 					}
 					newTable.ThawDetail[key] = data
-					////总资产减少
-					//OldAmount := big.NewInt(0)
-					//OldAmount.SetString(data.Amount, 10)
-					//newAmount.Sub(newAmount,OldAmount)
 				}else {
 					//总资产减少
 					OldAmount := big.NewInt(0)
@@ -588,22 +627,16 @@ func (t * Miner)GetThawTx(height int64,ctx xctx.XContext)([]*lpb.Transaction, er
 			pbTxBuf, err := proto.Marshal(newTable)
 			if err != nil {
 				ctx.GetLog().Warn("D__解冻时解析NodeTable失败")
-				return nil,err
+				return err
 			}
 			//fmt.Printf("D__解冻成功，打印newTable : %s \n",newTable)
 			batch.Put(append([]byte(lpb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
 			//原子写入
 			batch.Write()
-			//反转转账,只是凭空构建，交易不记录总资产
-			tx,error := t.ctx.State.ReverseTx(Address,batch,data.Amount)
-			if error != nil {
-				ctx.GetLog().Warn("D__反转转账构造交易失败.,error: %s \n",error)
-				return nil, error
-			}
-			txs = append(txs, tx)
+
 		}
 	}else {
-		return nil , nil
+		return  nil
 	}
 	//删除当前高度的信息
 	delete(NodeTable.NodeDetails,height)
@@ -611,18 +644,20 @@ func (t * Miner)GetThawTx(height int64,ctx xctx.XContext)([]*lpb.Transaction, er
 	pbTxBuf, err := proto.Marshal(NodeTable)
 	if err != nil {
 		ctx.GetLog().Warn("D__解冻时解析NodeTable失败")
-		return nil,err
+		return err
 	}
 	batch.Put(append([]byte(lpb.ConfirmedTablePrefix), keytable...), pbTxBuf)
 	//原子写入
 	writeErr := batch.Write()
 	if writeErr != nil {
-		ctx.GetLog().Warn("D__解冻交易时原子写入错误", "writeErr",writeErr)
-		return nil,writeErr
+		ctx.GetLog().Warn("D__解冻交易时原子写入错误","writeErr", writeErr)
+		return writeErr
 	}
 	//fmt.Printf("D__解冻交易拼接成功\n")
-	return txs, nil
+	return  nil
+
 }
+
 
 func (t *Miner) confirmBlockForMiner(ctx xctx.XContext, block *lpb.InternalBlock) error {
 	// 需要转化下，为了共识做一些变更（比如pow）

@@ -55,6 +55,7 @@ type RootConfig struct {
 	IrreversibleSlideWindow string `json:"irreversibleslidewindow"`
 	// GroupChainContract
 	GroupChainContract InvokeRequest `json:"group_chain_contract"`
+	TransferFeeAmount        int64 `json:"transfer_fee_amount"` //转账手续费
 }
 
 // GasPrice define gas rate for utxo
@@ -249,4 +250,9 @@ func (rc *RootConfig) GetGasPrice() *protos.GasPrice {
 		XfeeRate: rc.GasPrice.XfeeRate,
 	}
 	return gasPrice
+}
+
+//添加获取手续费的函数
+func (rc *RootConfig) GetTransferFeeAmount() int64 {
+	return rc.TransferFeeAmount
 }

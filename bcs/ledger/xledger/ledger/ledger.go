@@ -66,6 +66,7 @@ const (
 	IrreversibleSlideWindowKey = "IrreversibleSlideWindow"
 	GasPriceKey                = "GasPrice"
 	GroupChainContractKey      = "GroupChainContract"
+	TransferFeeAmountKey        = "TransferFeeAmount"
 )
 
 // Ledger define data structure of Ledger
@@ -1867,4 +1868,10 @@ func (l *Ledger) QueryBlockByTxid(txid []byte) (*pb.InternalBlock, error) {
 		return nil, err
 	}
 	return l.queryBlock(tx.GetBlockid(), false)
+}
+
+//获取创世块中设置的转账手续费
+func (l *Ledger) GetTransferFeeAmount() int64 {
+	defaultTransferFeeAmount := l.GenesisBlock.GetConfig().GetTransferFeeAmount()
+	return defaultTransferFeeAmount
 }

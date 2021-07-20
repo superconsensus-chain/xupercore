@@ -355,8 +355,36 @@ func (t *State) VerifyTx(tx *pb.Transaction) (bool, error) {
 			return ok, err
 		}
 	}
+
+	if !t.VerifyTxFee(tx) {
+		return false, errors.New("you must input fee")
+	}
 	return isValid, err
 }
+
+//添加校验转账手续费的函数
+func (t *State) VerifyTxFee(tx *pb.Transaction) bool {
+	////联盟链不需要手续费
+	//if uv.GetTransferFeeAmount() == 0 {
+	//	return true
+	//}
+	for _, output := range tx.TxOutputs {
+		switch string(output.ToAddr) {
+		//手续费
+		case FeePlaceholder:
+			//手续费价格匹配
+			fee := big.NewInt(0).SetBytes(output.Amount)
+			if fee.Int64() >= 1000 {
+				return true
+			}
+		//空的收款人
+		case "":
+			return false
+		}
+	}
+	return false
+}
+
 
 // 执行交易
 func (t *State) DoTx(tx *pb.Transaction) error {
