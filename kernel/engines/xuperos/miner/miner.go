@@ -436,7 +436,7 @@ func (t *Miner) packBlock(ctx xctx.XContext, height int64,
 	}
 
 	//投票奖励分配
-	if remainAward != nil && remainAward.Int64() > 0 && flag == true{
+	if remainAward != nil && remainAward.Int64() > 0 && flag == false{
 		voteTxs, err :=t.GenerateVoteAward(t.ctx.Address.Address,remainAward)
 		if err != nil {
 			return nil, fmt.Errorf("D__[Vote_Award] fail to generate vote award",  "err", err)
@@ -570,7 +570,7 @@ func (t * Miner)ClearThawTx(height int64,ctx xctx.XContext)error{
 	PbTxBuf, kvErr := t.ctx.Ledger.ConfirmedTable.Get([]byte(keytable))
 	NodeTable := &protos.NodeTable{}
 	if(kvErr != nil) {
-		ctx.GetLog().Warn("D__节点中不含解冻信息")
+		//ctx.GetLog().Warn("D__节点中不含解冻信息")
 		return nil
 	}
 	parserErr := proto.Unmarshal(PbTxBuf, NodeTable)
