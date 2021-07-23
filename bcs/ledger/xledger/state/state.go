@@ -1335,7 +1335,7 @@ func (t *State) procTodoBlkForWalk(todoBlocks []*pb.InternalBlock) (err error) {
 			}
 
 			// 校验普通交易合法性
-			if !tx.Autogen && !tx.Coinbase && !tx.ThawCoinbase {
+			if !tx.Autogen && !tx.Coinbase && !tx.ThawCoinbase && !tx.VoteCoinbase {
 				if ok, err := t.ImmediateVerifyTx(tx, false); !ok {
 					return fmt.Errorf("immediate verify tx error.txid:%s,err:%v", showTxId, err)
 				}

@@ -155,7 +155,7 @@ func (t *Miner) Start() {
 		}
 		// 4.1 删除解冻区块后的部分数据
 		//获取高度
-		height := t.ctx.Ledger.GetMeta().TrunkHeight + 1
+		height := t.ctx.Ledger.GetMeta().TrunkHeight - 1
 		t.ClearThawTx(height,ctx)
 
 		// 5.如果出错，休眠3s后重试，防止cpu被打满
@@ -205,7 +205,7 @@ func (t *Miner)ReadTermTable(ctx xctx.XContext) (bool,error){
 			termTable.NewCycle = false
 		}
 	}else {
-		ctx.GetLog().Warn("D__节点初始化")
+		//ctx.GetLog().Warn("D__节点初始化")
 		termTable.NewCycle = false
 		termTable.Trem = term.GetCurrentTerm()
 	}
@@ -269,7 +269,7 @@ func (t *Miner)UpdateCacheTable(ctx xctx.XContext){
 		}
 		table.VotingUser = CandidateTable.VotingUser
 		table.Ratio = CandidateTable.Ratio
-		table.TotalVote = CandidateTable.TatalVote
+		table.TotalVote = CandidateTable.BeVotedTotal
 		//写表
 		pbTxBuf, err := proto.Marshal(table)
 		if err != nil {

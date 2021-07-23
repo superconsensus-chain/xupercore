@@ -483,7 +483,10 @@ func (l *Ledger)AssignRewards(address string,blockAward *big.Int) *big.Int {
 	}
 	parserErr = proto.Unmarshal(PbTxBuf, table)
 	if parserErr != nil{
-		fmt.Printf("D__校验分配奖励读UserReward表错误\n")
+		l.xlog.Warn("D__校验分配奖励读UserReward表错误")
+		return award
+	}
+	if table.TotalVote == "0" || table.TotalVote == "" {
 		return award
 	}
 	ratData := table.Ratio
@@ -1056,7 +1059,7 @@ func (l *Ledger) RevokeVote(batch kvdb.Batch,user string,Args map[string]string)
 
 	//读撤销投票的用户表,修改被投票的内容
 	BeCandidateTable := &protos.CandidateRatio{}
-	error = l.ReadBallotTable(user,BeCandidateTable)
+	error = l.ReadBallotTable(candidate,BeCandidateTable)
 	if error != nil {
 		return error
 	}

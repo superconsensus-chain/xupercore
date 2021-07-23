@@ -289,6 +289,18 @@ func (t *ledgerReader)GetVerification(address string)(*protos.VerificationTable,
 	//fmt.Printf("D__进入GetVerification\n")
 	out := &protos.VerificationTable{}
 
+	//获取当前出块的人
+	LedgerMeta := t.chainCtx.Ledger.GetMeta()
+	tipBlockId := LedgerMeta.TipBlockid
+	Block, err := t.chainCtx.Ledger.QueryBlock(tipBlockId)
+	if err != nil {
+		t.log.Warn("query block error", "err", err, "blockId", tipBlockId)
+		return nil, common.ErrBlockNotExist
+	}
+	curBlockNum := Block.CurBlockNum
+	proposer := string(Block.Proposer)
+	cycle := 0
+
 	//获取tdpos出块验证人
 	cons , error := t.chainCtx.Consensus.GetConsensusStatus()
 	if error != nil{
@@ -319,9 +331,13 @@ func (t *ledgerReader)GetVerification(address string)(*protos.VerificationTable,
 				free , _ := new(big.Int).SetString(value, 10)
 				total , _ := new(big.Int).SetString(CandidateRatio.BeVotedTotal,10)
 				free.Mul(free,big.NewInt(10000))
-				ratio := free.Div(free,total).Int64()
-				VerificationInfo.Percentage = fmt.Sprintf("%.2f", float64(ratio)/100)
-				VerificationInfo.Percentage += "%"
+				if total.Int64() > 0 {
+					ratio := free.Div(free, total).Int64()
+					VerificationInfo.Percentage = fmt.Sprintf("%.2f", float64(ratio)/100)
+					VerificationInfo.Percentage += "%"
+				} else {
+					VerificationInfo.Percentage = "0%"
+				}
 			}else {
 				VerificationInfo.Percentage = "0%"
 			}
@@ -332,6 +348,14 @@ func (t *ledgerReader)GetVerification(address string)(*protos.VerificationTable,
 		}
 	}
 	out.Len = int64(len(out.Verification))
+
+	for _ , data := range ValidatorsInfo.Validators {
+		if proposer != data { //判断出块到哪个验证人了
+			cycle++
+		}else {
+			break
+		}
+	}
 
 	//从所有候选人里面读
 	toTable := "tdpos_freezes_total_assets"
@@ -363,9 +387,13 @@ func (t *ledgerReader)GetVerification(address string)(*protos.VerificationTable,
 				free , _ := new(big.Int).SetString(value, 10)
 				total , _ := new(big.Int).SetString(CandidateRatio.BeVotedTotal,10)
 				free.Mul(free,big.NewInt(10000))
-				ratio := free.Div(free,total).Int64()
-				VerificationInfo.Percentage = fmt.Sprintf("%.2f", float64(ratio)/100)
-				VerificationInfo.Percentage += "%"
+				if total.Int64() > 0 {
+					ratio := free.Div(free, total).Int64()
+					VerificationInfo.Percentage = fmt.Sprintf("%.2f", float64(ratio)/100)
+					VerificationInfo.Percentage += "%"
+				}else {
+					VerificationInfo.Percentage = "0%"
+				}
 			}else {
 				VerificationInfo.Percentage = "0%"
 			}
@@ -380,5 +408,11 @@ func (t *ledgerReader)GetVerification(address string)(*protos.VerificationTable,
 	}
 	out.LenCandidate = int64(len(out.Candidate))
 	//fmt.Printf("D__验证人获取完毕\n")
+
+	index := out.Len - int64(cycle)
+	out.TimeLeft = index*60 - curBlockNum*3
+	if out.TimeLeft < 0 {
+		out.TimeLeft = 0
+	}
 	return out, nil
 }

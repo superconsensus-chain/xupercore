@@ -195,6 +195,11 @@ func (uv *UtxoVM) CheckInputEqualOutput(tx *pb.Transaction) error {
 		// thawcoinbase交易，输入输出不必相等, 特殊处理
 		return nil
 	}
+	if inputSum.Cmp(big.NewInt(0)) == 0 && tx.VoteCoinbase {
+		// VoteCoinbase交易，输入输出不必相等, 特殊处理
+		return nil
+	}
+
 	uv.log.Warn("input != output", "inputSum", inputSum, "outputSum", outputSum)
 	return ErrInputOutputNotEqual
 }
