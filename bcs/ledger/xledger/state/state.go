@@ -849,7 +849,7 @@ func (t *State) checkTxState(tx *pb.Transaction) error {
 				return t.checkSell(tx,tmpReq.Args)
 			}
 		}
-		if tmpReq.ModuleName == "xkernel" && tmpReq.ContractName == "$tdpos"{
+		if tmpReq.ModuleName == "xkernel" && (tmpReq.ContractName == "$tdpos" || tmpReq.ContractName =="$xpos" ){
 			switch tmpReq.MethodName {
 			case "nominateCandidate":
 				return t.checkNominateCandidate(tmpReq.Args)

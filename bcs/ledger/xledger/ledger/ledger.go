@@ -732,7 +732,7 @@ func (l *Ledger) ConfirmBlock(block *pb.InternalBlock, isRoot bool) ConfirmStatu
 					l.xlog.Warn("D__解析交易存表时方法异常，异常方法名:","tmpReq.MethodName",tmpReq.MethodName)
 				}
 			}
-			if tmpReq.ModuleName == "xkernel" && tmpReq.ContractName == "$tdpos"{
+			if tmpReq.ModuleName == "xkernel" && (tmpReq.ContractName == "$tdpos" || tmpReq.ContractName =="$xpos" ) {
 				switch tmpReq.MethodName {
 				case "nominateCandidate":
 					l.WriteCandidateTable(batchWrite,string(tx.TxInputs[0].FromAddr),tmpReq.Args)
