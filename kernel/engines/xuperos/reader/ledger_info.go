@@ -335,11 +335,14 @@ func (t *ledgerReader)GetVerification(address string)(*protos.VerificationTable,
 					ratio := free.Div(free, total).Int64()
 					VerificationInfo.Percentage = fmt.Sprintf("%.2f", float64(ratio)/100)
 					VerificationInfo.Percentage += "%"
+					VerificationInfo.MyTotal = value
 				} else {
 					VerificationInfo.Percentage = "0%"
+					VerificationInfo.MyTotal = "0"
 				}
 			}else {
 				VerificationInfo.Percentage = "0%"
+				VerificationInfo.MyTotal = "0"
 			}
 			if out.Verification == nil {
 				out.Verification = make(map[string]*protos.VerificationInfo)
@@ -391,19 +394,22 @@ func (t *ledgerReader)GetVerification(address string)(*protos.VerificationTable,
 					ratio := free.Div(free, total).Int64()
 					VerificationInfo.Percentage = fmt.Sprintf("%.2f", float64(ratio)/100)
 					VerificationInfo.Percentage += "%"
+					VerificationInfo.MyTotal = value
 				}else {
 					VerificationInfo.Percentage = "0%"
+					VerificationInfo.MyTotal = "0"
 				}
 			}else {
 				VerificationInfo.Percentage = "0%"
+				VerificationInfo.MyTotal = "0"
 			}
 			if out.Candidate == nil {
 				out.Candidate = make(map[string]*protos.VerificationInfo)
 			}
-			_ , ok = out.Verification[data]
-			if  !ok {
-				out.Candidate[data] = VerificationInfo
-			}
+			//_ , ok = out.Verification[data]
+			//if  !ok {
+			out.Candidate[data] = VerificationInfo
+			//}
 		}
 	}
 	out.LenCandidate = int64(len(out.Candidate))

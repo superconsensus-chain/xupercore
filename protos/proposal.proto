@@ -163,6 +163,8 @@ message VerificationInfo{
     int32 ratio = 2;
     //投票百分比
     string percentage =3;
+    //我的票数
+    string my_total = 4;
 }
 
 message VerificationTable{
@@ -191,4 +193,3 @@ message BCStatusExplorer{
     //节点数
     int64 nodes = 5;
 }
-

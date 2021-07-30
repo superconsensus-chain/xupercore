@@ -54,6 +54,7 @@ func (t *Miner) GenerateVoteAward(address string ,remainAward *big.Int) ([]*lpb.
 		voteawardtx, err := tx.GenerateVoteAwardTx([]byte(key), voteAward.String(), []byte{'1'})
 		if err != nil {
 			t.log.Warn("D__[Vote_Award] fail to generate vote award tx", "err", err)
+			fmt.Printf("D__投票异常，voteAward \n,",voteawardtx)
 			return nil, err
 		}
 		txs = append(txs, voteawardtx)

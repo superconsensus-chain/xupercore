@@ -412,8 +412,8 @@ func (t *Miner) packBlock(ctx xctx.XContext, height int64,
 	// 2.1 查看节点待解冻信息，看其是否有冻结的
 	thawTx, err := t.GetThawTx(height,ctx)
 	if err != nil {
-		ctx.GetLog().Warn("D__解冻出块时查询解冻信息失败\n")
-		return nil, err
+		ctx.GetLog().Warn("D__解冻出块时查询解冻信息失败\n","err",err)
+		//return nil, err
 	}
 
 	// 3.获取矿工奖励交易
@@ -439,7 +439,7 @@ func (t *Miner) packBlock(ctx xctx.XContext, height int64,
 	if remainAward != nil && remainAward.Int64() > 0 && flag == false{
 		voteTxs, err :=t.GenerateVoteAward(t.ctx.Address.Address,remainAward)
 		if err != nil {
-			return nil, fmt.Errorf("D__[Vote_Award] fail to generate vote award",  "err", err)
+			ctx.GetLog().Warn("D__[Vote_Award] fail to generate vote award",  "err", err)
 		}
 		txList = append(txList, voteTxs...)
 	}

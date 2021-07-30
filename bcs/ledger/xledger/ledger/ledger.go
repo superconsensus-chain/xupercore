@@ -910,7 +910,7 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
-
+	batch.Write()
 	//解冻内容存储至节点信息表，在出块的时候通过交易id构建退款交易
 	keytalbe = "nodeinfo_" + "tdos_thaw_total_assets"
 	//查看节点是否存在申请解冻的
@@ -953,7 +953,7 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
-
+	batch.Write()
 	//解冻后用户提案表治理代币减少
 	keytalbe = "ballot_" + user
 	PbTxBuf, kvErr = l.ConfirmedTable.Get([]byte(keytalbe))
@@ -978,7 +978,7 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
-
+	batch.Write()
 	//全网抵押总资产减少
 	toTable := "tdpos_freezes_total_assets"
 	freetable := &protos.AllCandidate{}
@@ -1002,7 +1002,7 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch,user string,desc []byte) error 
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), toTable...), pbTxBuf)
-
+	batch.Write()
 	//fmt.Printf("D__申请冻结表执行完毕 \n")
 	return nil
 }
@@ -1039,6 +1039,11 @@ func (l *Ledger) RevokeVote(batch kvdb.Batch,user string,Args map[string]string)
 	if ok {
 		NewAmount := big.NewInt(0)
 		NewAmount.SetString(value,10)
+		// 追加判断——防止连续撤销投票操作时导致票数小于0的情况
+		if NewAmount.Cmp(big.NewInt(0)) <= 0 {
+			l.xlog.Warn("---对目标用户的投票数已经小于等于0\n")
+			return errors.New("RevokeVoteWarn---对目标用户的投票数已经小于等于0\n")
+		}
 		value = NewAmount.Sub(NewAmount,ballots).String()
 		CandidateTable.MyVoting[candidate] = value
 	}
@@ -1052,6 +1057,7 @@ func (l *Ledger) RevokeVote(batch kvdb.Batch,user string,Args map[string]string)
 		return errors.New("D__解析UserBallotTable失败\n")
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + user...), pbTxBuf)
+	batch.Write()
 	kvErr := batch.Write() //原子写入
 	if kvErr != nil {
 		return errors.New("D__写表错误\n ")
@@ -1081,6 +1087,7 @@ func (l *Ledger) RevokeVote(batch kvdb.Batch,user string,Args map[string]string)
 		return errors.New("D__投票写表解析BeCandidateTable失败\n")
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + candidate...), pbTxBuf)
+	batch.Write()
 	return nil
 }
 
@@ -1158,7 +1165,7 @@ func (l *Ledger) VoteCandidateTable(batch kvdb.Batch,user string,Args map[string
 		return errors.New("D__投票写表解析BeCandidateTable失败\n")
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + candidate...), pbTxBuf)
-
+	batch.Write()
 	return nil
 }
 
@@ -1216,6 +1223,7 @@ func (l *Ledger) WriteReCandidateTable (batch kvdb.Batch,user string,Args map[st
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + candidate...), pbTxBuf)
+	batch.Write()
 	//所有提名表那删除这次提名人
 	toTable := "tdpos_freezes_total_assets"
 	freetable := &protos.AllCandidate{}
@@ -1233,7 +1241,7 @@ func (l *Ledger) WriteReCandidateTable (batch kvdb.Batch,user string,Args map[st
 		return errors.New("D__取消提案时解析AllCandidate失败\n")
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), toTable...), pbTxBuf)
-
+	batch.Write()
 	return nil
 }
 
@@ -1305,7 +1313,7 @@ func (l *Ledger) WriteCandidateTable (batch kvdb.Batch,user string,Args map[stri
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), "ballot_" + candidate...), pbTxBuf)
-
+	batch.Write()
 	//在这儿记录一下所有提名人
 	toTable := "tdpos_freezes_total_assets"
 	freetable := &protos.AllCandidate{}
@@ -1331,6 +1339,7 @@ func (l *Ledger) WriteCandidateTable (batch kvdb.Batch,user string,Args map[stri
 		return errors.New("D__解析AllCandidate失败\n")
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), toTable...), pbTxBuf)
+	batch.Write()
 	return nil
 }
 
@@ -1374,7 +1383,7 @@ func (l *Ledger)WriteFreezeTable(batch kvdb.Batch,amount string,user string,txid
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
-
+	batch.Write()
 	//用户提案表治理代币增加
 	keytalbe = "ballot_" + user
 	//查看用户是否之前有过
@@ -1401,7 +1410,7 @@ func (l *Ledger)WriteFreezeTable(batch kvdb.Batch,amount string,user string,txid
 	}
 
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), keytalbe...), pbTxBuf)
-
+	batch.Write()
 	//全网抵押总资产增加
 	toTable := "tdpos_freezes_total_assets"
 	freetable := &protos.AllCandidate{}
@@ -1424,7 +1433,7 @@ func (l *Ledger)WriteFreezeTable(batch kvdb.Batch,amount string,user string,txid
 		return err
 	}
 	batch.Put(append([]byte(pb.ConfirmedTablePrefix), toTable...), pbTxBuf)
-
+	batch.Write()
 	return nil
 }
 
