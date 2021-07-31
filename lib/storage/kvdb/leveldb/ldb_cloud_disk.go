@@ -3,12 +3,12 @@ package leveldb
 import (
 	pt "path"
 
+	"github.com/superconsensus-chain/xupercore/lib/storage/config"
+	levels3 "github.com/superconsensus-chain/xupercore/lib/storage/s3"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	"github.com/superconsensus-chain/xupercore/lib/storage/config"
-	"github.com/superconsensus-chain/xupercore/lib/storage/s3"
 )
 
 // Open opens an instance of LDB with parameters (ldb path and other options)

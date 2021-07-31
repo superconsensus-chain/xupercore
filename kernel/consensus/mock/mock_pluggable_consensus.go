@@ -3,12 +3,16 @@ package mock
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"time"
+
+	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
 
 	"github.com/superconsensus-chain/xupercore/bcs/network/p2pv2"
 	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
 	"github.com/superconsensus-chain/xupercore/kernel/consensus/context"
 	"github.com/superconsensus-chain/xupercore/kernel/contract"
+	"github.com/superconsensus-chain/xupercore/kernel/contract/bridge/pb"
 	"github.com/superconsensus-chain/xupercore/kernel/ledger"
 	"github.com/superconsensus-chain/xupercore/kernel/mock"
 	nctx "github.com/superconsensus-chain/xupercore/kernel/network/context"
@@ -106,6 +110,16 @@ func (b *FakeBlock) GetConsensusStorage() ([]byte, error) {
 
 func (b *FakeBlock) GetTimestamp() int64 {
 	return b.Timestamp
+}
+
+func (b *FakeBlock) GetInTrunk() bool {
+	return false
+}
+func (b *FakeBlock) GetNextHash() []byte {
+	return []byte{}
+}
+func (b *FakeBlock) GetTxIDs() []string {
+	return []string{}
 }
 
 type FakeMeta struct {
@@ -249,6 +263,10 @@ func NewFakeKContext(args map[string][]byte, m map[string]map[string][]byte) *Fa
 	}
 }
 
+func (c *FakeKContext) EmitAsyncTask(event string, args interface{}) error {
+	return nil
+}
+
 func (c *FakeKContext) Args() map[string][]byte {
 	return c.args
 }
@@ -325,6 +343,22 @@ func (c *FakeKContext) ResourceLimit() contract.Limits {
 
 func (c *FakeKContext) Call(module, contract, method string, args map[string][]byte) (*contract.Response, error) {
 	return nil, nil
+}
+
+func (c *FakeKContext) UTXORWSet() *contract.UTXORWSet {
+	return &contract.UTXORWSet{
+		Rset: []*protos.TxInput{},
+		WSet: []*protos.TxOutput{},
+	}
+}
+func (c *FakeKContext) Transfer(from string, to string, amount *big.Int) error {
+	return nil
+}
+func (c *FakeKContext) QueryBlock(blockid []byte) (*xldgpb.InternalBlock, error) {
+	return &xldgpb.InternalBlock{}, nil
+}
+func (c *FakeKContext) QueryTransaction(txid []byte) (*pb.Transaction, error) {
+	return &pb.Transaction{}, nil
 }
 
 type FakeManager struct {

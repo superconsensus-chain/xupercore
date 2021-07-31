@@ -2,6 +2,7 @@ package event
 
 import (
 	"fmt"
+
 	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/common"
 
 	pb "github.com/superconsensus-chain/xupercore/protos"

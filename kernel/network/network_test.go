@@ -2,8 +2,9 @@ package network
 
 import (
 	"fmt"
-	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
 	"testing"
+
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
 
 	"github.com/superconsensus-chain/xupercore/kernel/mock"
 	nctx "github.com/superconsensus-chain/xupercore/kernel/network/context"

@@ -2,9 +2,10 @@ package p2pv1
 
 import (
 	"errors"
-	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
 	"io"
 	"sync"
+
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"

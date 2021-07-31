@@ -6,6 +6,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/superconsensus-chain/xupercore/kernel/contract"
+
 	"github.com/superconsensus-chain/xupercore/kernel/ledger"
 )
 
@@ -23,7 +25,10 @@ func TestXMCachePutGet(t *testing.T) {
 	}
 	store := NewMemXModel()
 
-	mc := NewXModelCache(store)
+	mc := NewXModelCache(&contract.SandboxConfig{
+		XMReader:   store,
+		UTXOReader: nil,
+	})
 	for _, test := range testCases {
 		switch test.Op {
 		case "put":
@@ -66,7 +71,10 @@ func TestXMCacheIterator(t *testing.T) {
 			},
 		})
 	}
-	mc := NewXModelCache(state)
+	mc := NewXModelCache(&contract.SandboxConfig{
+		XMReader:   state,
+		UTXOReader: nil,
+	})
 	for i := N / 2; i < N; i++ {
 		t.Logf("write cache:%s", keys[i])
 		mc.Put("test", []byte(keys[i]), []byte(keys[i]))

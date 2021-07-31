@@ -2,10 +2,11 @@ package event
 
 import (
 	"encoding/hex"
-	"github.com/superconsensus-chain/xupercore/protos"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/superconsensus-chain/xupercore/protos"
 )
 
 func TestBlockTopicBasic(t *testing.T) {

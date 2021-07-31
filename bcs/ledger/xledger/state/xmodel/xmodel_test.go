@@ -2,11 +2,12 @@ package xmodel
 
 import (
 	"fmt"
-	kledger "github.com/superconsensus-chain/xupercore/kernel/ledger"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	kledger "github.com/superconsensus-chain/xupercore/kernel/ledger"
 
 	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/def"
 	ledger_pkg "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/ledger"

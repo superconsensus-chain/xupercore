@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/state"
+
 	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/ledger"
 	consdef "github.com/superconsensus-chain/xupercore/kernel/consensus/def"
 	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/common"
@@ -86,7 +88,7 @@ func (t *LedgerAgent) QueryBlock(blkId []byte) (kledger.BlockHandle, error) {
 		return nil, err
 	}
 
-	return NewBlockAgent(block), nil
+	return state.NewBlockAgent(block), nil
 }
 
 func (t *LedgerAgent) QueryBlockByHeight(height int64) (kledger.BlockHandle, error) {
@@ -95,7 +97,7 @@ func (t *LedgerAgent) QueryBlockByHeight(height int64) (kledger.BlockHandle, err
 		return nil, err
 	}
 
-	return NewBlockAgent(block), nil
+	return state.NewBlockAgent(block), nil
 }
 
 func (t *LedgerAgent) GetTipBlock() kledger.BlockHandle {

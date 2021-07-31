@@ -3,7 +3,8 @@ package bridge
 import (
 	"sync"
 
-	log15 "github.com/xuperchain/log15"
+	"github.com/superconsensus-chain/xupercore/lib/logs"
+
 	"github.com/superconsensus-chain/xupercore/kernel/contract"
 	"github.com/superconsensus-chain/xupercore/kernel/contract/bridge/pb"
 	"github.com/superconsensus-chain/xupercore/protos"
@@ -39,7 +40,7 @@ type Context struct {
 
 	Instance Instance
 
-	Logger log15.Logger
+	Logger logs.Logger
 
 	// resource used by sub contract call
 	SubResourceUsed contract.Limits

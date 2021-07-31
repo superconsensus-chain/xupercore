@@ -1,12 +1,18 @@
 package contract
 
 import (
+	"math/big"
+
 	"github.com/superconsensus-chain/xupercore/kernel/ledger"
 	"github.com/superconsensus-chain/xupercore/protos"
 )
 
 type SandboxConfig struct {
-	XMReader ledger.XMReader
+	XMReader   ledger.XMReader
+	UTXOReader UtxoReader
+}
+type UtxoReader interface {
+	SelectUtxo(string, *big.Int, bool, bool) ([]*protos.TxInput, [][]byte, *big.Int, error)
 }
 
 // Iterator iterates over key/value pairs in key order
@@ -31,6 +37,7 @@ type XMState interface {
 
 // XMState 对XuperBridge暴露对账本的UTXO操作能力
 type UTXOState interface {
+	Transfer(from string, to string, amount *big.Int) error
 }
 
 // CrossQueryState 对XuperBridge暴露对跨链只读合约的操作能力
@@ -56,9 +63,15 @@ type StateSandbox interface {
 	// 没有调用Flush只能得到KV数据的读写集
 	Flush() error
 	RWSet() *RWSet
+	UTXORWSet() *UTXORWSet
 }
 
 type RWSet struct {
 	RSet []*ledger.VersionedData
 	WSet []*ledger.PureData
+}
+
+type UTXORWSet struct {
+	Rset []*protos.TxInput
+	WSet []*protos.TxOutput
 }

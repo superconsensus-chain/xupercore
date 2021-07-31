@@ -11,8 +11,8 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 
 	units "github.com/docker/go-units"
-	log "github.com/xuperchain/log15"
 	"github.com/superconsensus-chain/xupercore/kernel/contract"
+	log "github.com/xuperchain/log15"
 )
 
 var (

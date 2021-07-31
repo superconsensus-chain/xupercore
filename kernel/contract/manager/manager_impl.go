@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/superconsensus-chain/xupercore/lib/logs"
+
 	"github.com/superconsensus-chain/xupercore/kernel/contract"
 	"github.com/superconsensus-chain/xupercore/kernel/contract/bridge"
 	"github.com/superconsensus-chain/xupercore/kernel/contract/sandbox"
@@ -47,6 +49,10 @@ func newManagerImpl(cfg *contract.ManagerConfig) (contract.Manager, error) {
 	m := &managerImpl{
 		core: cfg.Core,
 	}
+	var logDriver logs.Logger
+	if cfg.Config != nil {
+		logDriver = cfg.Config.LogDriver
+	}
 	xbridge, err := bridge.New(&bridge.XBridgeConfig{
 		Basedir: cfg.Basedir,
 		VMConfigs: map[bridge.ContractType]bridge.VMConfig{
@@ -59,9 +65,10 @@ func newManagerImpl(cfg *contract.ManagerConfig) (contract.Manager, error) {
 				Registry: &m.kregistry,
 			},
 		},
-		Config: *xcfg,
-		XModel: cfg.XMReader,
-		Core:   cfg.Core,
+		Config:    *xcfg,
+		XModel:    cfg.XMReader,
+		Core:      cfg.Core,
+		LogDriver: logDriver,
 	})
 	if err != nil {
 		return nil, err
@@ -80,7 +87,7 @@ func (m *managerImpl) NewContext(cfg *contract.ContextConfig) (contract.Context,
 }
 
 func (m *managerImpl) NewStateSandbox(cfg *contract.SandboxConfig) (contract.StateSandbox, error) {
-	return sandbox.NewXModelCache(cfg.XMReader), nil
+	return sandbox.NewXModelCache(cfg), nil
 }
 
 func (m *managerImpl) GetKernRegistry() contract.KernRegistry {

@@ -40,9 +40,8 @@ type Chain interface {
 // 依赖接口而不是依赖具体实现
 type Engine interface {
 	engines.BCEngine
+	ChainManager
 	Context() *EngineCtx
-	Get(string) (Chain, error)
-	GetChains() []string
 	SetRelyAgent(EngineRelyAgent) error
 }
 
@@ -62,5 +61,24 @@ type ChainRelyAgent interface {
 	CreateGovernToken() (governToken.GovManager, error)
 	CreateProposal() (propose.ProposeManager, error)
 	CreateTimerTask() (timerTask.TimerManager, error)
-	CreateParaChain() error
+}
+
+type ChainManager interface {
+	Get(string) (Chain, error)
+	GetChains() []string
+	LoadChain(string) error
+	Stop(string) error
+}
+
+// 避免循环调用
+type AsyncworkerAgent interface {
+	RegisterHandler(contract string, event string, handler TaskHandler)
+}
+
+type TaskHandler func(ctx TaskContext) error
+
+type TaskContext interface {
+	// ParseArgs 用来解析任务参数，参数为对应任务参数类型的指针
+	ParseArgs(v interface{}) error
+	RetryTimes() int
 }

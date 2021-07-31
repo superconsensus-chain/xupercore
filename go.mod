@@ -10,9 +10,9 @@ require (
 	github.com/emirpasic/gods v1.12.1-0.20201118132343-79df803e554c
 	github.com/fsouza/go-dockerclient v1.6.0
 	github.com/gogo/protobuf v1.3.1
-	github.com/golang/protobuf v1.4.2
+	github.com/golang/protobuf v1.4.3
 	github.com/golang/snappy v0.0.2-0.20200707131729-196ae77b8a26
-	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/hyperledger/burrow v0.30.5
 	github.com/ipfs/go-ipfs-addr v0.0.1
@@ -31,11 +31,11 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20200815110645-5c35d600f0ca
 	github.com/xuperchain/crypto v0.0.0-20201028025054-4d560674bcd6
 	github.com/xuperchain/log15 v0.0.0-20190620081506-bc88a9198230
-	github.com/xuperchain/xupercore v0.0.0-20210609030508-051e239efe17
+	github.com/xuperchain/xupercore v0.0.0-20210727025644-b21e3796e679
 	github.com/xuperchain/xvm v0.0.0-20210126142521-68fd016c56d7
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
-	google.golang.org/grpc v1.27.1
+	google.golang.org/grpc v1.35.0
 )
 
 replace github.com/hyperledger/burrow => github.com/xuperchain/burrow v0.30.6-0.20210317023017-369050d94f4a

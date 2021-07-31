@@ -23,7 +23,6 @@ import (
 	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/state/meta"
 	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/state/xmodel"
 	pb "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
-	"github.com/superconsensus-chain/xupercore/kernel/permission/acl"
 	aclu "github.com/superconsensus-chain/xupercore/kernel/permission/acl/utils"
 	"github.com/superconsensus-chain/xupercore/lib/cache"
 	crypto_base "github.com/superconsensus-chain/xupercore/lib/crypto/client/base"
@@ -98,12 +97,6 @@ type UtxoLockItem struct {
 	holder    *list.Element
 }
 
-type contractChainCore struct {
-	*acl.Manager // ACL manager for read/write acl table
-	*UtxoVM
-	*ledger.Ledger
-}
-
 func GenUtxoKey(addr []byte, txid []byte, offset int32) string {
 	return fmt.Sprintf("%s_%x_%d", addr, txid, offset)
 }
@@ -155,7 +148,7 @@ func (uv *UtxoVM) CheckInputEqualOutput(tx *pb.Transaction) error {
 			uBinary, findErr := uv.utxoTable.Get([]byte(utxoKey))
 			if findErr != nil {
 				if def.NormalizedKVError(findErr) == def.ErrKVNotFound {
-					uv.log.Info("not found utxo key:", "utxoKey", utxoKey)
+					uv.log.Error("not found utxo key:", "utxoKey", utxoKey)
 					return ErrUTXONotFound
 				}
 				uv.log.Warn("unexpected leveldb error when do checkInputEqualOutput", "findErr", findErr)
@@ -336,6 +329,11 @@ func (uv *UtxoVM) parseUtxoKeys(uKey string) ([]byte, int, error) {
 		return nil, 0, err
 	}
 	return refTxid, offset, nil
+}
+
+func (uv *UtxoVM) SelectUtxo(fromAddr string, totalNeed *big.Int, needLock, excludeUnconfirmed bool) ([]*protos.TxInput, [][]byte, *big.Int, error) {
+
+	return uv.SelectUtxos(fromAddr, totalNeed, needLock, excludeUnconfirmed)
 }
 
 //SelectUtxos 选择足够的utxo

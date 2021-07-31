@@ -2,6 +2,7 @@ package event
 
 import (
 	"crypto/rand"
+
 	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/state/xmodel"
 	lpb "github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/xldgpb"
 	"github.com/superconsensus-chain/xupercore/protos"

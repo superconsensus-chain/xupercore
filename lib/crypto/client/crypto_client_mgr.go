@@ -6,10 +6,10 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/xuperchain/crypto/core/account"
 	"github.com/superconsensus-chain/xupercore/lib/crypto/client/base"
 	"github.com/superconsensus-chain/xupercore/lib/crypto/client/gm"
-	"github.com/superconsensus-chain/xupercore/lib/crypto/client/xchain"
+	eccdefault "github.com/superconsensus-chain/xupercore/lib/crypto/client/xchain"
+	"github.com/xuperchain/crypto/core/account"
 )
 
 const (

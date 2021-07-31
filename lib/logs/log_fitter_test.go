@@ -66,5 +66,3 @@ func getLogDir() string {
 	dir := utils.GetCurFileDir()
 	return filepath.Join(dir, "logs")
 }
-
-

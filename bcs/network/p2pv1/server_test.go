@@ -1,9 +1,10 @@
 package p2pv1
 
 import (
-	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
 	"testing"
 	"time"
+
+	xctx "github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
 
 	"github.com/superconsensus-chain/xupercore/kernel/mock"
 	nctx "github.com/superconsensus-chain/xupercore/kernel/network/context"

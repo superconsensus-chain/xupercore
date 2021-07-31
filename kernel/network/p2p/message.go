@@ -2,8 +2,9 @@ package p2p
 
 import (
 	"errors"
-	"github.com/superconsensus-chain/xupercore/kernel/network/def"
 	"hash/crc32"
+
+	"github.com/superconsensus-chain/xupercore/kernel/network/def"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/snappy"

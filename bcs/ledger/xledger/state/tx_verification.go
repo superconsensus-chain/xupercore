@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/state/utxo"
 	"github.com/superconsensus-chain/xupercore/bcs/ledger/xledger/state/utxo/txhash"
@@ -21,6 +22,7 @@ import (
 	kledger "github.com/superconsensus-chain/xupercore/kernel/ledger"
 	aclu "github.com/superconsensus-chain/xupercore/kernel/permission/acl/utils"
 	"github.com/superconsensus-chain/xupercore/lib/crypto/client"
+	"github.com/superconsensus-chain/xupercore/lib/metrics"
 	"github.com/superconsensus-chain/xupercore/protos"
 
 	"github.com/golang/protobuf/proto"
@@ -39,6 +41,13 @@ import (
 //   6. run contract requests and verify if the RWSet result is the same with preExed RWSet (heavy
 //      operation, keep it at last)
 func (t *State) ImmediateVerifyTx(tx *pb.Transaction, isRootTx bool) (bool, error) {
+	beginTime := time.Now()
+	code := "InvalidTx"
+	defer func() {
+		metrics.CallMethodCounter.WithLabelValues(t.sctx.BCName, "ImmediateVerifyTx", code).Inc()
+		metrics.CallMethodHistogram.WithLabelValues(t.sctx.BCName, "ImmediateVerifyTx").Observe(time.Since(beginTime).Seconds())
+	}()
+
 	// Pre processing of tx data
 	if !isRootTx && tx.Version == RootTxVersion {
 		return false, ErrVersionInvalid
@@ -133,6 +142,8 @@ func (t *State) ImmediateVerifyTx(tx *pb.Transaction, isRootTx bool) (bool, erro
 			return ok, ErrRWSetInvalid
 		}
 	}
+
+	code = "OK"
 	return true, nil
 }
 
@@ -565,8 +576,14 @@ func (t *State) verifyTxRWSets(tx *pb.Transaction) (bool, error) {
 	}
 
 	reader := sandbox.XMReaderFromRWSet(rwSet)
+	utxoInput, err := xmodel.ParseContractUtxoInputs(tx)
+	if err != nil {
+		return false, err
+	}
+	utxoReader := sandbox.NewUTXOReaderFromInput(utxoInput)
 	sandBoxConfig := &contract.SandboxConfig{
-		XMReader: reader,
+		XMReader:   reader,
+		UTXOReader: utxoReader,
 	}
 	sandBox, err := t.sctx.ContractMgr.NewStateSandbox(sandBoxConfig)
 	if err != nil {

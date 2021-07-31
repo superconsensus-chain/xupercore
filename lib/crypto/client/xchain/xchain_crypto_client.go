@@ -2,8 +2,8 @@
 package eccdefault
 
 import (
-	"github.com/xuperchain/crypto/client/service/xchain"
 	"github.com/superconsensus-chain/xupercore/lib/crypto/client/base"
+	"github.com/xuperchain/crypto/client/service/xchain"
 )
 
 // make sure this plugin implemented the interface

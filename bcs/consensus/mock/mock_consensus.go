@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"time"
 
-	log "github.com/xuperchain/log15"
 	"github.com/superconsensus-chain/xupercore/kernel/common/xcontext"
 	cctx "github.com/superconsensus-chain/xupercore/kernel/consensus/context"
 	kmock "github.com/superconsensus-chain/xupercore/kernel/consensus/mock"
@@ -13,6 +12,7 @@ import (
 	"github.com/superconsensus-chain/xupercore/lib/crypto/client"
 	"github.com/superconsensus-chain/xupercore/lib/logs"
 	"github.com/superconsensus-chain/xupercore/lib/utils"
+	log "github.com/xuperchain/log15"
 )
 
 var (

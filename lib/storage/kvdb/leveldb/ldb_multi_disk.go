@@ -1,11 +1,11 @@
 package leveldb
 
 import (
+	"github.com/superconsensus-chain/xupercore/lib/storage/mstorage"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	"github.com/superconsensus-chain/xupercore/lib/storage/mstorage"
 )
 
 // Open opens an instance of LDB with parameters (ldb path and other options)

@@ -17,7 +17,9 @@ import (
 	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/agent"
 	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/common"
 	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/miner"
+	"github.com/superconsensus-chain/xupercore/kernel/engines/xuperos/parachain"
 	"github.com/superconsensus-chain/xupercore/lib/logs"
+	"github.com/superconsensus-chain/xupercore/lib/metrics"
 	"github.com/superconsensus-chain/xupercore/lib/timer"
 	"github.com/superconsensus-chain/xupercore/lib/utils"
 	"github.com/superconsensus-chain/xupercore/protos"
@@ -130,7 +132,8 @@ func (t *Chain) PreExec(ctx xctx.XContext, reqs []*protos.InvokeRequest, initiat
 	}
 
 	stateConfig := &contract.SandboxConfig{
-		XMReader: t.ctx.State.CreateXMReader(),
+		XMReader:   t.ctx.State.CreateXMReader(),
+		UTXOReader: t.ctx.State.CreateUtxoReader(),
 	}
 	sandbox, err := t.ctx.Contract.NewStateSandbox(stateConfig)
 	if err != nil {
@@ -160,6 +163,7 @@ func (t *Chain) PreExec(ctx xctx.XContext, reqs []*protos.InvokeRequest, initiat
 			continue
 		}
 
+		beginTime := time.Now()
 		contextConfig.Module = req.ModuleName
 		contextConfig.ContractName = req.ContractName
 		if transContractName == req.ContractName {
@@ -182,15 +186,18 @@ func (t *Chain) PreExec(ctx xctx.XContext, reqs []*protos.InvokeRequest, initiat
 		if err != nil {
 			context.Release()
 			ctx.GetLog().Error("PreExec Invoke error", "error", err, "contractName", req.ContractName)
+			metrics.ContractInvokeCounter.WithLabelValues(t.ctx.BCName, req.ModuleName, req.ContractName, req.MethodName, "InvokeError").Inc()
 			return nil, common.ErrContractInvokeFailed.More("%v", err)
 		}
 
 		if resp.Status >= 400 && i < len(reservedRequests) {
 			context.Release()
 			ctx.GetLog().Error("PreExec Invoke error", "status", resp.Status, "contractName", req.ContractName)
+			metrics.ContractInvokeCounter.WithLabelValues(t.ctx.BCName, req.ModuleName, req.ContractName, req.MethodName, "InvokeError").Inc()
 			return nil, common.ErrContractInvokeFailed.More("%v", resp.Message)
 		}
 
+		metrics.ContractInvokeCounter.WithLabelValues(t.ctx.BCName, req.ModuleName, req.ContractName, req.MethodName, "OK").Inc()
 		resourceUsed := context.ResourceUsed()
 		if i >= len(reservedRequests) {
 			gasUsed += resourceUsed.TotalGas(gasPrice)
@@ -211,6 +218,7 @@ func (t *Chain) PreExec(ctx xctx.XContext, reqs []*protos.InvokeRequest, initiat
 		responseBodes = append(responseBodes, resp.Body)
 
 		context.Release()
+		metrics.ContractInvokeHistogram.WithLabelValues(t.ctx.BCName, req.ModuleName, req.ContractName, req.MethodName).Observe(time.Since(beginTime).Seconds())
 	}
 
 	err = sandbox.Flush()
@@ -218,16 +226,17 @@ func (t *Chain) PreExec(ctx xctx.XContext, reqs []*protos.InvokeRequest, initiat
 		return nil, err
 	}
 	rwSet := sandbox.RWSet()
+	utxoRWSet := sandbox.UTXORWSet()
+
 	invokeResponse := &protos.InvokeResponse{
-		GasUsed:   gasUsed,
-		Response:  responseBodes,
-		Inputs:    xmodel.GetTxInputs(rwSet.RSet),
-		Outputs:   xmodel.GetTxOutputs(rwSet.WSet),
-		Requests:  requests,
-		Responses: responses,
-		// TODO: 合约内转账未实现，空值
-		//UtxoInputs:  utxoInputs,
-		//UtxoOutputs: utxoOutputs,
+		GasUsed:     gasUsed,
+		Response:    responseBodes,
+		Inputs:      xmodel.GetTxInputs(rwSet.RSet),
+		Outputs:     xmodel.GetTxOutputs(rwSet.WSet),
+		Requests:    requests,
+		Responses:   responses,
+		UtxoInputs:  utxoRWSet.Rset,
+		UtxoOutputs: utxoRWSet.WSet,
 	}
 	//目前这儿转账加个手续费,默认手续费操作不能低于1000
 	if invokeResponse.GasUsed < 1000 {
@@ -256,10 +265,16 @@ func (t *Chain) SubmitTx(ctx xctx.XContext, tx *lpb.Transaction) error {
 	}
 	t.txIdCache.Set(string(tx.GetTxid()), true, TxIdCacheExpired)
 
+	code := "OK"
+	defer func() {
+		metrics.CallMethodCounter.WithLabelValues(t.ctx.BCName, "SubmitTx", code).Inc()
+	}()
+
 	// 验证交易
 	_, err := t.ctx.State.VerifyTx(tx)
 	if err != nil {
 		log.Error("verify tx error", "txid", utils.F(tx.GetTxid()), "err", err)
+		code = "VerifyTxFailed"
 		return common.ErrTxVerifyFailed.More("err:%v", err)
 	}
 
@@ -270,10 +285,10 @@ func (t *Chain) SubmitTx(ctx xctx.XContext, tx *lpb.Transaction) error {
 		if err == state.ErrAlreadyInUnconfirmed {
 			t.txIdCache.Delete(string(tx.GetTxid()))
 		}
+		code = "SubmitTxFailed"
 		return common.ErrSubmitTxFailed.More("err:%v", err)
 	}
 
-	log.Info("submit tx succ", "txid", utils.F(tx.GetTxid()))
 	return nil
 }
 
@@ -412,14 +427,19 @@ func (t *Chain) initChainCtx() error {
 	// 设置timer manager到状态机
 	t.ctx.State.SetTimerTaskMG(t.ctx.TimerTask)
 	t.log.Trace("create timer_task succ", "bcName", t.ctx.BCName)
+	t.log.Trace("create chain succ", "bcName", t.ctx.BCName)
+	return nil
+}
 
-	// 11.平行链
-	/*err = t.relyAgent.CreateParaChain()
+// 创建平行链实例
+func (t *Chain) CreateParaChain() error {
+	paraChainCtx, err := parachain.NewParaChainCtx(t.ctx.BCName, t.ctx)
 	if err != nil {
-		t.log.Error("create parachain error", "bcName", t.ctx.BCName, "err", err)
-		return fmt.Errorf("create parachain error")
+		return fmt.Errorf("create parachain ctx failed.err:%v", err)
 	}
-	t.log.Trace("create parachain succ", "bcName", t.ctx.BCName)*/
-
+	_, err = parachain.NewParaChainManager(paraChainCtx)
+	if err != nil {
+		return fmt.Errorf("create parachain instance failed.err:%v", err)
+	}
 	return nil
 }
