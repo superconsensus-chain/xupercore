@@ -110,7 +110,7 @@ func (b *filteredBlockIterator) fetchBlock() (*protos.FilteredBlock, bool, error
 }
 
 func (b *filteredBlockIterator) Data() interface{} {
-	return b.biter.block
+	return b.block
 }
 
 func (b *filteredBlockIterator) Error() error {
