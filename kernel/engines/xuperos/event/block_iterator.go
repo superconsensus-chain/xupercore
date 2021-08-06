@@ -73,6 +73,10 @@ func (b *BlockIterator) Data() interface{} {
 	return b.Block()
 }
 
+func (b *BlockIterator) Data2() interface{} {
+	return b.Block()
+}
+
 func (b *BlockIterator) Error() error {
 	return b.err
 }

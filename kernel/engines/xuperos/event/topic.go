@@ -19,4 +19,5 @@ type Iterator interface {
 	Data() interface{}
 	Error() error
 	Close()
+	Data2() interface{}
 }
