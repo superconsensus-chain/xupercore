@@ -256,8 +256,8 @@ func (tp *tdposConsensus) runVote(contractCtx contract.KContext) (*contract.Resp
 		fmt.Println("flush error", err.Error())
 	}
 	rwSet := contractCtx.RWSet() // 读写集
-	fmt.Println("RSet len", len(rwSet.RSet), string(rwSet.RSet[0].PureData.GetKey()), string(rwSet.RSet[0].PureData.GetValue()))
-	fmt.Println("WSet len", len(rwSet.WSet), string(rwSet.WSet[0].GetKey()), string(rwSet.WSet[0].GetValue()))
+	//fmt.Println("RSet len", len(rwSet.RSet), string(rwSet.RSet[0].PureData.GetKey()), string(rwSet.RSet[0].PureData.GetValue()))
+	//fmt.Println("WSet len", len(rwSet.WSet), string(rwSet.WSet[0].GetKey()), string(rwSet.WSet[0].GetValue()))
 	if rwSet.RSet[0].PureData.GetValue() != nil {
 		tempByte := rwSet.RSet[0].PureData.GetValue() // 读集中的数据是最新的
 		tempVoteValue := NewvoteValue()
@@ -266,7 +266,7 @@ func (tp *tdposConsensus) runVote(contractCtx contract.KContext) (*contract.Resp
 		}
 		number := tempVoteValue[contractCtx.Initiator()] // 从读集中获取的最新票数
 		tempVoteValue[contractCtx.Initiator()] = number + amount
-		fmt.Println("number", number, "amount", amount)
+		//fmt.Println("number", number, "amount", amount)
 		newVoteBytes, err := json.Marshal(tempVoteValue)
 		if err != nil {
 			return common.NewContractErrResponse(common.StatusErr, err.Error()), err
@@ -375,10 +375,10 @@ func (tp *tdposConsensus) runRevokeVote(contractCtx contract.KContext) (*contrac
 		fmt.Println("flush error", err.Error())
 	}
 	rwSet := contractCtx.RWSet() // 读写集
-	fmt.Println("RSet revoke", string(rwSet.RSet[0].PureData.GetKey()), string(rwSet.RSet[0].PureData.GetValue()))
-	fmt.Println("WSet revoke", string(rwSet.WSet[0].GetKey()), string(rwSet.WSet[0].GetValue()))
-	fmt.Println("RSet vote", string(rwSet.RSet[1].PureData.GetKey()), string(rwSet.RSet[1].PureData.GetValue()))
-	fmt.Println("WSet vote", string(rwSet.WSet[1].GetKey()), string(rwSet.WSet[1].GetValue()))
+	//fmt.Println("RSet revoke", string(rwSet.RSet[0].PureData.GetKey()), string(rwSet.RSet[0].PureData.GetValue()))
+	//fmt.Println("WSet revoke", string(rwSet.WSet[0].GetKey()), string(rwSet.WSet[0].GetValue()))
+	//fmt.Println("RSet vote", string(rwSet.RSet[1].PureData.GetKey()), string(rwSet.RSet[1].PureData.GetValue()))
+	//fmt.Println("WSet vote", string(rwSet.WSet[1].GetKey()), string(rwSet.WSet[1].GetValue()))
 	if rwSet.RSet[0].PureData.GetValue() != nil {
 		// [1]是vote部分，更新
 		tempByte := rwSet.RSet[1].PureData.GetValue() // 读集中的数据是最新的
