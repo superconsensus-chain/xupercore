@@ -515,10 +515,10 @@ func (l *Ledger) IsValidTx(idx int, tx *pb.Transaction, block *pb.InternalBlock)
 		awardN := big.NewInt(0)
 		awardN.SetBytes(amountBytes)
 		//fmt.Printf("DT__awardN奖励: %s \n",awardN.String())
-		if awardN.Cmp(blockAward) != 0 {
-			//	l.xlog.Warn("invalid block award found", "award", awardN.String(), "target", awardTarget.String())
-			return false
-		}
+		//if awardN.Cmp(blockAward) != 0 {
+		//	//	l.xlog.Warn("invalid block award found", "award", awardN.String(), "target", awardTarget.String())
+		//	return false
+		//}
 	}
 	return true
 }
