@@ -371,13 +371,19 @@ func (t *State) VerifyTxFee(tx *pb.Transaction) bool {
 	//if uv.GetTransferFeeAmount() == 0 {
 	//	return true
 	//}
+	//设置了nofee的不需要手续费
+	nofee := t.sctx.Ledger.GetNoFee()
+	if nofee {
+		return true
+	}
+
 	for _, output := range tx.TxOutputs {
 		switch string(output.ToAddr) {
 		//手续费
 		case FeePlaceholder:
 			//手续费价格匹配
 			fee := big.NewInt(0).SetBytes(output.Amount)
-			if fee.Int64() >= 1000 {
+			if fee.Int64() >= 1000000 {
 				return true
 			}
 		//空的收款人
@@ -895,8 +901,33 @@ func (t *State) checkTxState(tx *pb.Transaction) error {
 				return t.checkRevokeNominate(string(tx.TxInputs[0].FromAddr),tmpReq.Args)
 			}
 		}
+		//联盟链创建手续费校验
+		if tmpReq.ModuleName == "xkernel" && tmpReq.ContractName == "$parachain" {
+			if tmpReq.MethodName == "createChain"{
+				return t.checkParachain(tx)
+			}
+		}
 	}
 
+	return nil
+}
+
+func (t * State)checkParachain(tx *pb.Transaction) error {
+	//flag := false
+	//用户交的手续费
+	feeAmount := big.NewInt(0)
+	for _ , data := range tx.TxOutputs{
+		if string(data.ToAddr) == "$" {
+			feeAmount.SetBytes(data.Amount)
+			//flag = true
+		}
+	}
+	//需要的手续费
+	Amount := big.NewInt(10000000000)
+	if feeAmount.Cmp(Amount) == -1  {
+		fmt.Printf("DERROR__创建联盟链输入的通证：%d \n",feeAmount.Int64())
+		return errors.New("D__创建联盟链手续费需要100个通证\n")
+	}
 	return nil
 }
 
@@ -934,6 +965,15 @@ func (t * State) checkRevokeNominate(user string,Args map[string]string) error {
 }
 
 func (t *State) checkNominateCandidate(Args map[string]string ) error {
+	//获取系统总资产
+	TotalMoney :=t.GetMeta().UtxoTotal
+	TotalAmount := big.NewInt(0)
+	_ , error := TotalAmount.SetString(TotalMoney,10)
+	fmt.Printf("D__当前全网资产: %d",TotalAmount.Int64())
+	if error == false {
+		return  errors.New("D__异常错误，获取系统总资产错误\n")
+	}
+	TotalAmount.Div(TotalAmount,big.NewInt(10000))
 	//参数获取，抵押的代币数
 	amount := Args["amount"]
 	//分红比
@@ -943,7 +983,7 @@ func (t *State) checkNominateCandidate(Args map[string]string ) error {
 		return  errors.New("D__提名候选人amount和ratio参数不能为空\n")
 	}
 	newAmount := big.NewInt(0)
-	_ , error := newAmount.SetString(amount,10)
+	_ , error = newAmount.SetString(amount,10)
 	if error == false {
 		return  errors.New("D__提名候选人amount参数内容有误\n")
 	}
@@ -955,8 +995,9 @@ func (t *State) checkNominateCandidate(Args map[string]string ) error {
 	if newRatio.Int64() < 0 || newRatio.Int64() > 100 {
 		return  errors.New("D__ratio参数取值必须在0-100之间\n")
 	}
-	if newAmount.Int64() < 1000000 {
-		return  errors.New("D__取名候选人抵押数量不得低于1000000\n")
+	if newAmount.Cmp(TotalAmount) == -1 {
+		fmt.Printf("D__当前抵押资产:%d , 全网万分之一资产:%d \n",newAmount.Int64(),TotalAmount.Int64())
+		return  errors.New("D__提名候选人抵押数量不得低于全网总资产的万分之一\n")
 	}
 	return nil
 }

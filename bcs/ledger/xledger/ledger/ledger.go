@@ -909,7 +909,7 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch, user string, desc []byte) erro
 			amount.Add(amount, tableValue)
 			//把当前冻结的放回到解冻
 			tabledata := &protos.FrozenDetails{
-				Height: l.GetMeta().TrunkHeight + 1 + 20,
+				Height: l.GetMeta().TrunkHeight + 1 + 288000,
 				Amount: value.Amount,
 			}
 			delete(table.FrozenDetail, v.(string))
@@ -946,7 +946,7 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch, user string, desc []byte) erro
 	NodeDetail := &protos.NodeDetail{
 		Address: user,
 		Amount:  amount.String(),
-		Height:  l.GetMeta().TrunkHeight + 1 + 20,
+		Height:  l.GetMeta().TrunkHeight + 1 + 288000,
 	}
 	NodeDetails := &protos.NodeDetails{}
 	if NodeTable.NodeDetails[NodeDetail.Height] == nil {

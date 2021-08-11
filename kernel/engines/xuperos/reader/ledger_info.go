@@ -416,7 +416,7 @@ func (t *ledgerReader)GetVerification(address string)(*protos.VerificationTable,
 	//fmt.Printf("D__验证人获取完毕\n")
 
 	index := out.Len - int64(cycle)
-	out.TimeLeft = index*60 - curBlockNum*3
+	out.TimeLeft = index*360 - curBlockNum*3
 	if out.TimeLeft < 0 {
 		out.TimeLeft = 0
 	}
