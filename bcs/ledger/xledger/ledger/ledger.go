@@ -984,7 +984,7 @@ func (l *Ledger) WriteThawTable(batch kvdb.Batch, user string, desc []byte) erro
 	oldAmount := big.NewInt(0)
 	oldAmount.SetString(CandidateTable.TatalVote, 10)
 	CandidateTable.TatalVote = oldAmount.Sub(oldAmount, amount).String()
-
+	fmt.Printf("D__用户%s解冻%s 资产 \n",user,amount)
 	//开始写治理投票表
 	pbTxBuf, err = proto.Marshal(CandidateTable)
 	if err != nil {
@@ -1359,6 +1359,7 @@ func (l *Ledger) WriteCandidateTable(batch kvdb.Batch, user string, Args map[str
 
 //写入冻结表
 func (l *Ledger) WriteFreezeTable(batch kvdb.Batch, amount string, user string, txid []byte) error {
+	fmt.Printf("D__用户%s购买治理代币%s \n",user,amount)
 	keytalbe := "amount_" + user
 	//查看用户是否冻结过
 	PbTxBuf, kvErr := l.ConfirmedTable.Get([]byte(keytalbe))

@@ -973,7 +973,8 @@ func (t *State) checkNominateCandidate(Args map[string]string ) error {
 	if error == false {
 		return  errors.New("D__异常错误，获取系统总资产错误\n")
 	}
-	TotalAmount.Div(TotalAmount,big.NewInt(10000))
+	//万分之一 + 除精度
+	TotalAmount.Div(TotalAmount,big.NewInt(1000000000000))
 	//参数获取，抵押的代币数
 	amount := Args["amount"]
 	//分红比
@@ -1070,6 +1071,11 @@ func (t *State)checkBuy(tx *pb.Transaction ,args map[string]string) error {
 	if flag == false {
 		return errors.New("D__购买治理代币未给指定用户转账\n")
 	}
+	rem := big.NewInt(0)
+	rem.Rem(chainAmount,big.NewInt(100000000))
+	//小数精度
+	chainAmount.Div(chainAmount,big.NewInt(100000000))
+
 	cliAmount := big.NewInt(0)
 	_,error := cliAmount.SetString(args["amount"],10)
 	if error == false {
@@ -1078,6 +1084,9 @@ func (t *State)checkBuy(tx *pb.Transaction ,args map[string]string) error {
 	if cliAmount.Cmp(chainAmount) != 0 || cliAmount.Cmp(big.NewInt(0)) == -1 {
 		t.log.Warn("D__购买治理代币amount和转账的量数据不同，","cliAmount" ,cliAmount.Int64(),"chainAmount",chainAmount.Int64())
 		return errors.New("D__购买治理代币amount和转账的量数据不同\n")
+	}
+	if rem.Int64() != 0 {
+		return errors.New("D__购买治理代币通证不能为小数\n")
 	}
 
 	return nil
@@ -1093,6 +1102,7 @@ func (t *State) ReverseTx(FromAddr string, batch kvdb.Batch,Amount string) (*pb.
 	if amount.Cmp(big.NewInt(0)) < 0 {
 		return nil, errors.New("D__解冻金额少于0\n")
 	}
+	amount.Mul(amount,big.NewInt(100000000))
 	txOutput := &protos.TxOutput{}
 	txOutput.ToAddr = []byte(address)
 	txOutput.Amount = amount.Bytes()
@@ -1101,7 +1111,7 @@ func (t *State) ReverseTx(FromAddr string, batch kvdb.Batch,Amount string) (*pb.
 	utxoTx.ThawCoinbase = true
 	utxoTx.Timestamp = time.Now().UnixNano()
 	utxoTx.Txid, _ = txhash.MakeTransactionID(utxoTx)
-
+	fmt.Printf("D__打印当前解冻的交易id%s\n",hex.EncodeToString(utxoTx.Txid))
 	return utxoTx,nil
 }
 
